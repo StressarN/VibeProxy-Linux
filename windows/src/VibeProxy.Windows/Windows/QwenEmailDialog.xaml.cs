@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using System.Windows;
+using WinMessageBox = System.Windows.MessageBox;
 
 namespace VibeProxy.Windows;
 
@@ -23,7 +24,7 @@ public partial class QwenEmailDialog : Window
     {
         if (!EmailRegex.IsMatch(Email))
         {
-            MessageBox.Show(this, "Enter a valid email address.", "Invalid email", MessageBoxButton.OK, MessageBoxImage.Warning);
+            WinMessageBox.Show(this, "Enter a valid email address.", "Invalid email", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

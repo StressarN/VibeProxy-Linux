@@ -57,7 +57,8 @@ public sealed class NotificationService : IDisposable
             dynamic shortcut = shell.CreateShortcut(shortcutPath);
             var exePath = Path.Combine(AppContext.BaseDirectory, "VibeProxy.Windows.exe");
             shortcut.TargetPath = exePath;
-            shortcut.WorkingDirectory = Path.GetDirectoryName(exePath);
+            var workingDirectory = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
+            shortcut.WorkingDirectory = workingDirectory;
             shortcut.WindowStyle = 1;
             shortcut.Description = "VibeProxy";
             shortcut.Save();

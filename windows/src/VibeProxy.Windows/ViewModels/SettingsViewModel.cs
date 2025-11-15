@@ -8,6 +8,8 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using WinApplication = System.Windows.Application;
+using WinClipboard = System.Windows.Clipboard;
 using VibeProxy.Windows.Models;
 using VibeProxy.Windows.Services;
 using VibeProxy.Windows.Utilities;
@@ -44,7 +46,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         _cliProxyService.StatusChanged += (_, _) =>
         {
-            Application.Current?.Dispatcher.Invoke(() =>
+            WinApplication.Current?.Dispatcher.Invoke(() =>
             {
                 RaisePropertyChanged(nameof(IsServerRunning));
                 UpdateServerStatusText();
@@ -53,7 +55,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         _cliProxyService.LogsUpdated += (_, logs) =>
         {
-            Application.Current?.Dispatcher.Invoke(() =>
+            WinApplication.Current?.Dispatcher.Invoke(() =>
             {
                 LogLines.Clear();
                 foreach (var line in logs)
@@ -66,14 +68,14 @@ public sealed class SettingsViewModel : ObservableObject
         _thinkingProxyServer.StatusChanged += (_, running) =>
         {
             _thinkingProxyRunning = running;
-            Application.Current?.Dispatcher.Invoke(() =>
+            WinApplication.Current?.Dispatcher.Invoke(() =>
             {
                 RaisePropertyChanged(nameof(IsThinkingProxyRunning));
                 UpdateServerStatusText();
             });
         };
 
-        _authStatusService.StatusesChanged += (_, statuses) => Application.Current?.Dispatcher.Invoke(() => UpdateStatuses(statuses));
+        _authStatusService.StatusesChanged += (_, statuses) => WinApplication.Current?.Dispatcher.Invoke(() => UpdateStatuses(statuses));
 
         _ = InitializeAsync();
     }
@@ -131,18 +133,18 @@ public sealed class SettingsViewModel : ObservableObject
         var url = "http://localhost:8317";
         try
         {
-            var dispatcher = Application.Current?.Dispatcher;
+            var dispatcher = WinApplication.Current?.Dispatcher;
             if (dispatcher is null)
             {
-                Clipboard.SetText(url);
+                WinClipboard.SetText(url);
             }
             else if (dispatcher.CheckAccess())
             {
-                Clipboard.SetText(url);
+                WinClipboard.SetText(url);
             }
             else
             {
-                dispatcher.Invoke(() => Clipboard.SetText(url));
+                dispatcher.Invoke(() => WinClipboard.SetText(url));
             }
             _notificationService.Show("Copied", "Server URL copied to clipboard");
         }
@@ -189,7 +191,7 @@ public sealed class SettingsViewModel : ObservableObject
         UpdateLaunchAtLoginFlag(launch);
         await _authStatusService.RefreshAsync().ConfigureAwait(false);
         var snapshot = _authStatusService.CurrentStatuses;
-        Application.Current?.Dispatcher.Invoke(() => UpdateStatuses(snapshot));
+        WinApplication.Current?.Dispatcher.Invoke(() => UpdateStatuses(snapshot));
         UpdateServerStatusText();
     }
 
@@ -328,7 +330,7 @@ public sealed class SettingsViewModel : ObservableObject
         var status = IsServerRunning
             ? $"Server: Running (port {_thinkingProxyServer.ListeningPort})"
             : "Server: Stopped";
-        if (Application.Current is { Dispatcher: { } dispatcher })
+        if (WinApplication.Current is { Dispatcher: { } dispatcher })
         {
             if (dispatcher.CheckAccess())
             {
@@ -355,7 +357,7 @@ public sealed class SettingsViewModel : ObservableObject
         {
             _authBusy[provider] = busy;
         }
-        var dispatcher = Application.Current?.Dispatcher;
+        var dispatcher = WinApplication.Current?.Dispatcher;
         if (dispatcher is null)
         {
             return;
@@ -399,7 +401,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void UpdateLaunchAtLoginFlag(bool value)
     {
-        var dispatcher = Application.Current?.Dispatcher;
+        var dispatcher = WinApplication.Current?.Dispatcher;
         if (dispatcher is null)
         {
             LaunchAtLoginEnabled = value;

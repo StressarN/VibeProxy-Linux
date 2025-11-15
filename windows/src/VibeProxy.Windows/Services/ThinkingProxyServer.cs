@@ -251,7 +251,7 @@ public sealed class ThinkingProxyServer : IDisposable
         using var targetClient = new TcpClient();
         await targetClient.ConnectAsync(IPAddress.Loopback, TargetPort, cancellationToken).ConfigureAwait(false);
 
-        await using var targetStream = targetClient.GetStream().ConfigureAwait(false);
+        using var targetStream = targetClient.GetStream();
 
         var builder = new StringBuilder();
         builder.Append(method).Append(' ').Append(path).Append(' ').Append(version).Append("\r\n");

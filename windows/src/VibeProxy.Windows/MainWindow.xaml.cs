@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
+using CheckBoxControl = System.Windows.Controls.CheckBox;
 using VibeProxy.Windows.Models;
 using VibeProxy.Windows.ViewModels;
 
@@ -29,7 +29,7 @@ public partial class MainWindow : Window
 
     private async void OnLaunchAtLoginClick(object sender, RoutedEventArgs e)
     {
-        if (sender is CheckBox box)
+        if (sender is CheckBoxControl box)
         {
             await ViewModel.UpdateLaunchAtLoginAsync(box.IsChecked == true);
         }
