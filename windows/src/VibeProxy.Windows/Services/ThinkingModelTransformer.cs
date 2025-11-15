@@ -60,8 +60,13 @@ internal static class ThinkingModelTransformer
             var desiredHeadroom = Math.Max(1024, effectiveBudget / 10);
             var desiredMaxTokens = Math.Min(HardCap, effectiveBudget + desiredHeadroom);
 
-            AdjustTokenField(node, "max_output_tokens", desiredMaxTokens, effectiveBudget);
-            AdjustTokenField(node, "max_tokens", desiredMaxTokens, effectiveBudget);
+            var preferredTokenField = node.ContainsKey("max_tokens")
+                ? "max_tokens"
+                : node.ContainsKey("max_output_tokens")
+                    ? "max_output_tokens"
+                    : "max_tokens";
+
+            AdjustTokenField(node, preferredTokenField, desiredMaxTokens, effectiveBudget);
 
             return (node.ToJsonString(new JsonSerializerOptions { WriteIndented = false }), true);
         }
@@ -75,6 +80,12 @@ internal static class ThinkingModelTransformer
     {
         if (node[propertyName] is JsonValue existingValue && existingValue.TryGetValue<int>(out var current) && current > budget)
         {
+            return;
+        }
+
+        if (!node.ContainsKey(propertyName))
+        {
+            node[propertyName] = Math.Max(budget + 1, desiredValue);
             return;
         }
 
