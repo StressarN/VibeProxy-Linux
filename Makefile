@@ -1,4 +1,7 @@
-.PHONY: build app install clean run help
+.PHONY: build app install clean run help windows-build windows-release windows-help
+
+PWSH ?= pwsh
+WINDOWS_BUILD_SCRIPT := scripts/build-windows.ps1
 
 help: ## Show this help message
 	@echo "VibeProxy - macOS Menu Bar App"
@@ -70,6 +73,18 @@ edit-config: ## Edit the bundled config.yaml
 	else \
 		echo "❌ App bundle not found. Run 'make app' first."; \
 	fi
+
+windows-help: ## Show prerequisites for Windows builds
+	@echo "🪟 Windows build targets require PowerShell 7+ (pwsh) and .NET SDK on a Windows host."
+	@echo "Run 'make windows-build' or 'make windows-release' from Windows to produce artifacts in windows/out/."
+
+windows-build: ## Build Windows artifacts in Debug configuration via PowerShell script
+	@command -v $(PWSH) >/dev/null 2>&1 || { echo "❌ PowerShell '$(PWSH)' not found. Install pwsh to continue."; exit 1; }
+	@$(PWSH) -NoProfile -ExecutionPolicy Bypass -File $(WINDOWS_BUILD_SCRIPT) -Configuration Debug
+
+windows-release: ## Build Windows artifacts in Release configuration via PowerShell script
+	@command -v $(PWSH) >/dev/null 2>&1 || { echo "❌ PowerShell '$(PWSH)' not found. Install pwsh to continue."; exit 1; }
+	@$(PWSH) -NoProfile -ExecutionPolicy Bypass -File $(WINDOWS_BUILD_SCRIPT) -Configuration Release
 
 # Shortcuts
 all: app ## Same as 'app'
