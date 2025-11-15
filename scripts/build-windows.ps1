@@ -75,6 +75,10 @@ dotnet publish (Join-Path $repoRoot "windows/src/VibeProxy.Windows/VibeProxy.Win
     -p:PublishSingleFile=true `
     -o $publishDir
 
+if (-not (Test-Path $publishDir)) {
+    throw "Publish directory '$publishDir' was not created. See dotnet publish output above."
+}
+
 $zipPath = Join-Path $outputDir "VibeProxy-Windows-$Configuration.zip"
 if (Test-Path $zipPath) {
     Remove-Item $zipPath -Force
