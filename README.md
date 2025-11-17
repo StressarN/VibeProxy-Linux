@@ -3,8 +3,8 @@
 <p align="center">
 <a href="https://github.com/StressarN" rel="nofollow"><img alt="StressarN" src="https://img.shields.io/badge/By-StressarN-4b3baf" style="max-width: 100%;"></a>
 <a href="https://github.com/automazeio/vibeproxy/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745" style="max-width: 100%;"></a>
-<a href="http://x.com/intent/follow?screen_name=aroussi" rel="nofollow"><img alt="Follow on 𝕏" src="https://img.shields.io/badge/Follow-%F0%9D%95%8F/@aroussi-1c9bf0" style="max-width: 100%;"></a>
-<a href="https://github.com/automazeio/vibeproxy"><img alt="Star this repo" src="https://img.shields.io/github/stars/automazeio/vibeproxy.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
+<a href="http://x.com/intent/follow?screen_name=StressarN" rel="nofollow"><img alt="Follow on 𝕏" src="https://img.shields.io/badge/Follow-%F0%9D%95%8F/@StressarN-1c9bf0" style="max-width: 100%;"></a>
+<a href="https://github.com/StressarN/VibeProxy-Linux"><img alt="Star this repo" src="https://img.shields.io/github/stars/StressarN/VibeProxy-Linux.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
 </p>
 
 > [!WARNING]
