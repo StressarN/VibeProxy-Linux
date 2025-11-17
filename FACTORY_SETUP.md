@@ -310,4 +310,4 @@ VibeProxy is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIP
 
 **Need Help?**
 - Report issues: [GitHub Issues](https://github.com/automazeio/vibeproxy/issues)
-- VibeProxy by [Automaze, Ltd.](https://automaze.io)
+- VibeProxy Linux by StressarN (based on the original by [Automaze, Ltd.](https://automaze.io))

@@ -1,11 +1,14 @@
 # VibeProxy for Linux
 
 <p align="center">
-<a href="https://automaze.io" rel="nofollow"><img alt="Automaze" src="https://img.shields.io/badge/By-automaze.io-4b3baf" style="max-width: 100%;"></a>
+<a href="https://github.com/StressarN" rel="nofollow"><img alt="StressarN" src="https://img.shields.io/badge/By-StressarN-4b3baf" style="max-width: 100%;"></a>
 <a href="https://github.com/automazeio/vibeproxy/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745" style="max-width: 100%;"></a>
 <a href="http://x.com/intent/follow?screen_name=aroussi" rel="nofollow"><img alt="Follow on 𝕏" src="https://img.shields.io/badge/Follow-%F0%9D%95%8F/@aroussi-1c9bf0" style="max-width: 100%;"></a>
 <a href="https://github.com/automazeio/vibeproxy"><img alt="Star this repo" src="https://img.shields.io/github/stars/automazeio/vibeproxy.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
 </p>
+
+> [!WARNING]
+> **HIGHLY EXPERIMENTAL BUT FUNCTIONAL** - This project is in active development. While core features work, expect rough edges and breaking changes.
 
 **Stop paying twice for AI.** VibeProxy is a native Linux desktop application that lets you use your existing Claude Code, ChatGPT, **Gemini**, and **Qwen** subscriptions with powerful AI coding tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
 
@@ -154,7 +157,9 @@ make test
 
 VibeProxy is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), an excellent unified proxy server for AI services.
 
-Special thanks to the CLIProxyAPI project for providing the core functionality that makes VibeProxy possible.
+Special thanks to:
+- The CLIProxyAPI project for providing the core functionality that makes VibeProxy possible
+- **[Automaze, Ltd.](https://automaze.io)** for the original VibeProxy concept and implementation - this Linux version builds upon their excellent foundation
 
 ## License
 
@@ -163,8 +168,7 @@ MIT License - see LICENSE file for details
 ## Support
 
 - **Report Issues**: [GitHub Issues](https://github.com/automazeio/vibeproxy/issues)
-- **Website**: [automaze.io](https://automaze.io)
 
 ---
 
-© 2025 [Automaze, Ltd.](https://automaze.io) All rights reserved.
+© 2025 StressarN. All rights reserved.
