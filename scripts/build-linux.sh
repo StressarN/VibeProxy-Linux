@@ -4,9 +4,9 @@ set -euo pipefail
 CONFIGURATION=${1:-Release}
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SOLUTION="$ROOT_DIR/linux/VibeProxy.Linux.sln"
-PROJECT="$ROOT_DIR/linux/src/VibeProxy.Linux/VibeProxy.Linux.csproj"
-OUT_DIR="$ROOT_DIR/linux/out"
+SOLUTION="$ROOT_DIR/VibeProxy.Linux.sln"
+PROJECT="$ROOT_DIR/src/VibeProxy.Linux/VibeProxy.Linux.csproj"
+OUT_DIR="$ROOT_DIR/out"
 PUBLISH_DIR="$OUT_DIR/publish"
 ZIP_PATH="$OUT_DIR/VibeProxy-Linux-${CONFIGURATION}.zip"
 

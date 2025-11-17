@@ -1,34 +1,40 @@
-# Installing VibeProxy
+# Installing VibeProxy for Linux
 
-**⚠️ Requirements:** macOS running on **Apple Silicon only** (M1/M2/M3/M4 Macs). Intel Macs are not supported.
+**⚠️ Requirements:** Linux (x64 or ARM64) with .NET 8.0 or later
 
 ## Option 1: Download Pre-built Release (Recommended)
 
 ### Step 1: Download
 
 1. Go to the [**Releases**](https://github.com/automazeio/vibeproxy/releases) page
-2. Download the latest `VibeProxy.zip`
-3. Extract the ZIP file
+2. Download the latest Linux release package (e.g., `vibeproxy-linux-x64.tar.gz`)
+3. Extract the archive
 
 ### Step 2: Install
 
-**Choose your preferred method:**
+```bash
+# Extract the archive
+tar -xzf vibeproxy-linux-*.tar.gz
+cd vibeproxy-linux
 
-**Via ZIP:**
-1. Drag `VibeProxy.app` to your `/Applications` folder
-2. Double-click to launch
+# Make the binary executable
+chmod +x VibeProxy.Linux
 
-**Via DMG (if available):**
-1. Double-click `VibeProxy.dmg` to mount
-2. Drag `VibeProxy.app` to the Applications folder shortcut
-3. Eject the DMG
-4. Launch VibeProxy from Applications
+# Optionally, move to a system path (requires sudo)
+sudo mv VibeProxy.Linux /usr/local/bin/vibeproxy
+```
 
 ### Step 3: Launch
 
-Double-click `VibeProxy.app` - it will launch immediately with no warnings! ✅
+Run the application:
 
-**Why?** VibeProxy releases are **code signed** with an Apple Developer ID and **notarized** by Apple, ensuring a seamless installation experience.
+```bash
+# If installed to system path
+vibeproxy
+
+# Or run from extracted directory
+./VibeProxy.Linux
+```
 
 ---
 
@@ -36,10 +42,31 @@ Double-click `VibeProxy.app` - it will launch immediately with no warnings! ✅
 
 ### Prerequisites
 
-- macOS 13.0 (Ventura) or later
-- Swift 5.9+
-- Xcode Command Line Tools
+- Linux (x64 or ARM64)
+- .NET 8.0 SDK or later
 - Git
+
+### Install .NET SDK
+
+**Ubuntu/Debian:**
+```bash
+wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+sudo apt-get update
+sudo apt-get install -y dotnet-sdk-8.0
+```
+
+**Fedora:**
+```bash
+sudo dnf install dotnet-sdk-8.0
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S dotnet-sdk
+```
+
+For other distributions, see: https://learn.microsoft.com/en-us/dotnet/core/install/linux
 
 ### Build Instructions
 
@@ -49,56 +76,60 @@ Double-click `VibeProxy.app` - it will launch immediately with no warnings! ✅
    cd vibeproxy
    ```
 
-2. **Build the app**
+2. **Build the application**
    ```bash
-   ./create-app-bundle.sh
+   # Build in Release mode
+   make release
+   
+   # Or use the build script directly
+   bash scripts/build-linux.sh Release
    ```
 
    This will:
-   - Build the Swift executable in release mode
-   - Download and bundle CLIProxyAPI
-   - Create `VibeProxy.app`
-   - Sign it with your Developer ID (if available)
+   - Build the .NET application in release mode
+   - Create a self-contained executable
+   - Bundle CLIProxyAPI and resources
+   - Output to `out/publish/`
 
-3. **Install**
+3. **Run the application**
    ```bash
-   # Move to Applications folder
-   mv VibeProxy.app /Applications/
-
-   # Or run directly
-   open VibeProxy.app
+   cd out/publish
+   ./VibeProxy.Linux
    ```
 
 ### Build Commands
 
 ```bash
-# Quick build and run
-make run
+# Build in Debug mode
+make build
 
-# Build .app bundle
-make app
+# Build in Release mode
+make release
 
-# Install to /Applications
-make install
+# Run tests
+make test
 
 # Clean build artifacts
 make clean
 ```
 
-### Code Signing (Optional)
+### Build Options
 
-If you have an Apple Developer account, the build script will automatically detect and use your Developer ID certificate for signing.
+The build script supports different configurations:
 
-To manually specify a certificate:
 ```bash
-CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./create-app-bundle.sh
+# Debug build (with symbols and debugging)
+bash scripts/build-linux.sh Debug
+
+# Release build (optimized)
+bash scripts/build-linux.sh Release
 ```
 
 ---
 
 ## Verifying Downloads
 
-Before installing any downloaded app, verify its authenticity:
+Before installing any downloaded package, verify its authenticity:
 
 ### 1. Download from Official Source
 
@@ -110,13 +141,13 @@ Each release includes SHA-256 checksums:
 
 ```bash
 # Download the checksum file
-curl -LO https://github.com/automazeio/vibeproxy/releases/download/vX.X.X/VibeProxy.zip.sha256
+curl -LO https://github.com/automazeio/vibeproxy/releases/download/vX.X.X/vibeproxy-linux-x64.tar.gz.sha256
 
 # Verify the download
-shasum -a 256 -c VibeProxy.zip.sha256
+sha256sum -c vibeproxy-linux-x64.tar.gz.sha256
 ```
 
-Expected output: `VibeProxy.zip: OK`
+Expected output: `vibeproxy-linux-x64.tar.gz: OK`
 
 ### 3. Inspect the Code
 
@@ -126,34 +157,75 @@ All source code is available in this repository - feel free to review before bui
 
 ## Troubleshooting
 
-### "App is damaged and can't be opened"
+### Missing .NET Runtime
 
-This can happen if download quarantine attributes cause issues:
+If you get "dotnet not found" or similar errors:
 
 ```bash
-xattr -cr /Applications/VibeProxy.app
+# Verify .NET is installed
+dotnet --version
+
+# Install .NET Runtime (if you only need to run, not build)
+sudo apt-get install -y dotnet-runtime-8.0  # Ubuntu/Debian
+sudo dnf install dotnet-runtime-8.0         # Fedora
 ```
 
-Then try opening again.
+### Permission Denied
+
+Make sure the binary is executable:
+
+```bash
+chmod +x VibeProxy.Linux
+```
+
+### Port Already in Use
+
+If port 8317 is already in use:
+
+```bash
+# Find the process using the port
+sudo lsof -i :8317
+
+# Kill the process (replace PID with actual process ID)
+kill -9 <PID>
+```
 
 ### Build Fails
 
-**Error: Swift not found**
+**Error: .NET SDK not found**
 ```bash
-# Install Xcode Command Line Tools
-xcode-select --install
+# Install .NET SDK (see prerequisites section above)
+dotnet --version
 ```
 
-**Error: Permission denied**
+**Error: Permission denied when running build script**
 ```bash
-# Make scripts executable
-chmod +x build.sh create-app-bundle.sh
+# Make the build script executable
+chmod +x scripts/build-linux.sh
+```
+
+### System Tray Icon Not Showing
+
+Some desktop environments require additional packages:
+
+**GNOME:**
+```bash
+# Install AppIndicator extension
+sudo apt-get install gnome-shell-extension-appindicator
+```
+
+**KDE Plasma:**
+System tray should work out of the box.
+
+**XFCE:**
+```bash
+sudo apt-get install xfce4-indicator-plugin
 ```
 
 ### Still Having Issues?
 
-- **Check System Requirements**: macOS 13.0 (Ventura) or later
-- **Check Logs**: Look for errors in Console.app (search for "VibeProxy")
+- **Check System Requirements**: Linux with .NET 8.0 or later
+- **Check Logs**: Run with `--verbose` flag or check system logs
 - **Report an Issue**: [GitHub Issues](https://github.com/automazeio/vibeproxy/issues)
 
 ---

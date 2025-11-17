@@ -1,8 +1,4 @@
-# VibeProxy
-
-<p align="center">
-  <img src="icon.png" width="128" height="128" alt="VibeProxy Icon">
-</p>
+# VibeProxy for Linux
 
 <p align="center">
 <a href="https://automaze.io" rel="nofollow"><img alt="Automaze" src="https://img.shields.io/badge/By-automaze.io-4b3baf" style="max-width: 100%;"></a>
@@ -11,15 +7,15 @@
 <a href="https://github.com/automazeio/vibeproxy"><img alt="Star this repo" src="https://img.shields.io/github/stars/automazeio/vibeproxy.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
 </p>
 
-**Stop paying twice for AI.** VibeProxy is a beautiful native macOS menu bar app that lets you use your existing Claude Code, ChatGPT, **Gemini**, and **Qwen** subscriptions with powerful AI coding tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
+**Stop paying twice for AI.** VibeProxy is a native Linux desktop application that lets you use your existing Claude Code, ChatGPT, **Gemini**, and **Qwen** subscriptions with powerful AI coding tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
 
 Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles OAuth authentication, token management, and API routing automatically. One click to authenticate, zero friction to code.
 
 > [!IMPORTANT]
-> **NEW: Gemini and Qwen Support! 🎉** VibeProxy now supports Google's Gemini AI and Qwen AI with full OAuth authentication. Connect your accounts and use Gemini and Qwen with your favorite AI coding tools!
+> **Gemini and Qwen Support! 🎉** VibeProxy supports Google's Gemini AI and Qwen AI with full OAuth authentication. Connect your accounts and use Gemini and Qwen with your favorite AI coding tools!
 
 > [!IMPORTANT]
-> **NEW: Extended Thinking Support! 🧠** VibeProxy now supports Claude's extended thinking feature with dynamic budgets (4K, 10K, 32K tokens). Use model names like `claude-sonnet-4-5-20250929-thinking-10000` to enable extended thinking. See the [Factory Setup Guide](FACTORY_SETUP.md#step-3-configure-factory-cli) for details.
+> **Extended Thinking Support! 🧠** VibeProxy supports Claude's extended thinking feature with dynamic budgets (4K, 10K, 32K tokens). Use model names like `claude-sonnet-4-5-20250929-thinking-10000` to enable extended thinking. See the [Factory Setup Guide](FACTORY_SETUP.md#step-3-configure-factory-cli) for details.
 
 <p align="center">
 <br>
@@ -32,27 +28,25 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
 
 ## Features
 
-- 🎯 **Native macOS Experience** - Clean, native SwiftUI interface that feels right at home on macOS
-- 🚀 **One-Click Server Management** - Start/stop the proxy server from your menu bar
+- 🐧 **Native Linux Experience** - Clean Avalonia UI that integrates with your Linux desktop
+- 🚀 **One-Click Server Management** - Start/stop the proxy server from the system tray
 - 🔐 **OAuth Integration** - Authenticate with Codex, Claude Code, Gemini, and Qwen directly from the app
 - 📊 **Real-Time Status** - Live connection status and automatic credential detection
 - 🔄 **Auto-Updates** - Monitors auth files and updates UI in real-time
-- 🎨 **Beautiful Icons** - Custom icons with dark mode support
-- 💾 **Self-Contained** - Everything bundled inside the .app (server binary, config, static files)
+- 🎨 **System Tray Integration** - Convenient access from your system tray
+- 💾 **Self-Contained** - Everything bundled in the application (server binary, config, static files)
 
 
 ## Installation
 
-**⚠️ Requirements:** macOS running on **Apple Silicon only** (M1/M2/M3/M4 Macs). Intel Macs are not supported.
+**⚠️ Requirements:** Linux with .NET 8.0 or later
 
 ### Download Pre-built Release (Recommended)
 
 1. Go to the [**Releases**](https://github.com/automazeio/vibeproxy/releases) page
-2. Download the latest `VibeProxy.zip`
-3. Extract and drag `VibeProxy.app` to `/Applications`
+2. Download the latest Linux release package
+3. Extract and run the application
 4. Launch VibeProxy
-
-**Code Signed & Notarized** ✅ - No Gatekeeper warnings, installs seamlessly on macOS.
 
 ### Build from Source
 
@@ -62,7 +56,7 @@ Want to build it yourself? See [**INSTALLATION.md**](INSTALLATION.md) for detail
 
 ### First Launch
 
-1. Launch VibeProxy - you'll see a menu bar icon
+1. Launch VibeProxy - you'll see a system tray icon
 2. Click the icon and select "Open Settings"
 3. The server will start automatically
 4. Click "Connect" for Claude Code, Codex, Gemini, or Qwen to authenticate
@@ -78,12 +72,13 @@ When you click "Connect":
 ### Server Management
 
 - **Toggle Server**: Click the status (Running/Stopped) to start/stop
-- **Menu Bar Icon**: Shows active/inactive state
+- **System Tray Icon**: Shows active/inactive state
 - **Launch at Login**: Toggle to start VibeProxy automatically
 
 ## Requirements
 
-- macOS 13.0 (Ventura) or later
+- Linux (x64 or ARM64)
+- .NET 8.0 Runtime or later
 
 ## Development
 
@@ -91,37 +86,69 @@ When you click "Connect":
 
 ```
 VibeProxy/
-├── Sources/
-│   ├── main.swift              # App entry point
-│   ├── AppDelegate.swift       # Menu bar & window management
-│   ├── ServerManager.swift     # Server process control & auth
-│   ├── SettingsView.swift      # Main UI
-│   ├── AuthStatus.swift        # Auth file monitoring
-│   └── Resources/
-│       ├── AppIcon.iconset     # App icon
-│       ├── AppIcon.icns        # App icon
-│       ├── cli-proxy-api       # CLIProxyAPI binary
-│       ├── config.yaml         # CLIProxyAPI config
-│       ├── icon-active.png     # Menu bar icon (active)
-│       ├── icon-inactive.png   # Menu bar icon (inactive)
-│       ├── icon-claude.png     # Claude Code service icon
-│       ├── icon-codex.png      # Codex service icon
-│       ├── icon-gemini.png     # Gemini service icon
-│       └── icon-qwen.png       # Qwen service icon
-├── Package.swift               # Swift Package Manager config
-├── Info.plist                  # macOS app metadata
-├── build.sh                    # Resource bundling script
-├── create-app-bundle.sh        # App bundle creation script
-└── Makefile                    # Build automation
+├── src/
+│   └── VibeProxy.Linux/
+│       ├── Program.cs                    # App entry point
+│       ├── App.axaml.cs                  # Application lifecycle
+│       ├── MainWindow.axaml              # Main UI window
+│       ├── MainWindow.axaml.cs           # Main window logic
+│       ├── Services/
+│       │   ├── CliProxyService.cs        # CLIProxyAPI process control
+│       │   ├── AuthStatusService.cs      # Auth file monitoring
+│       │   ├── TrayService.cs            # System tray integration
+│       │   ├── NotificationService.cs    # Desktop notifications
+│       │   ├── AuthCommand.cs            # OAuth authentication
+│       │   ├── ThinkingProxyServer.cs    # Extended thinking proxy
+│       │   ├── ThinkingModelTransformer.cs # Model name transformer
+│       │   └── LaunchAtLoginService.cs   # Auto-start service
+│       ├── ViewModels/
+│       │   └── SettingsViewModel.cs      # Settings UI logic
+│       ├── Models/
+│       │   └── AuthStatus.cs             # Auth status model
+│       ├── Utilities/
+│       │   ├── ObservableObject.cs       # MVVM base class
+│       │   ├── RelayCommand.cs           # Command implementation
+│       │   ├── AsyncCommand.cs           # Async command implementation
+│       │   ├── RingBuffer.cs             # Circular buffer for logs
+│       │   └── BooleanNegationConverter.cs # UI converter
+│       └── Resources/
+│           ├── cli-proxy-api             # CLIProxyAPI binary
+│           ├── config.yaml               # CLIProxyAPI config
+│           ├── icon-active.png           # Tray icon (active)
+│           ├── icon-inactive.png         # Tray icon (inactive)
+│           ├── icon-claude.png           # Claude Code service icon
+│           ├── icon-codex.png            # Codex service icon
+│           ├── icon-gemini.png           # Gemini service icon
+│           └── icon-qwen.png             # Qwen service icon
+├── tests/
+│   └── VibeProxy.Linux.Tests/            # Unit tests
+├── VibeProxy.Linux.sln                   # Solution file
+├── scripts/
+│   └── build-linux.sh                    # Build script
+└── Makefile                              # Build automation
 ```
 
 ### Key Components
 
-- **AppDelegate**: Manages the menu bar item and settings window lifecycle
-- **ServerManager**: Controls the cli-proxy-api server process and OAuth authentication
-- **SettingsView**: SwiftUI interface with native macOS design
-- **AuthStatus**: Monitors `~/.cli-proxy-api/` for authentication files
+- **CliProxyService**: Controls the cli-proxy-api server process and OAuth authentication
+- **TrayService**: Manages the system tray icon and menu
+- **SettingsViewModel**: Avalonia MVVM viewmodel for the main settings UI
+- **AuthStatusService**: Monitors `~/.cli-proxy-api/` for authentication files
+- **ThinkingProxyServer**: Intercepts requests and adds extended thinking support
 - **File Monitoring**: Real-time updates when auth files are added/removed
+
+### Building
+
+```bash
+# Build in Debug mode
+make build
+
+# Build in Release mode
+make release
+
+# Run tests
+make test
+```
 
 ## Credits
 

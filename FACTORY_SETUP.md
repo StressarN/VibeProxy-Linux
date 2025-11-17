@@ -16,23 +16,30 @@ VibeProxy manages OAuth tokens, auto-refreshes them, routes requests, and handle
 
 ## Prerequisites
 
-- macOS 13.0+ (Ventura or later)
+- Linux (x64 or ARM64)
+- .NET 8.0 Runtime or later
 - Active **Claude Code Pro/Max** subscription for Anthropic access
 - Active **ChatGPT Plus/Pro** subscription for OpenAI Codex access
 - Factory CLI installed: `curl -fsSL https://app.factory.ai/cli | sh`
 
 ## Step 1: Install VibeProxy
 
-1. **Download [VibeProxy.app](https://github.com/automazeio/vibeproxy/releases)** from the releases page or build from source
-2. **Install**: Drag `VibeProxy.app` to your `/Applications` folder
-3. **Launch**: Open VibeProxy from Applications
-   - If macOS blocks it: Right-click → Open, then click "Open" in the dialog
+1. **Download** the latest Linux release from the [releases page](https://github.com/automazeio/vibeproxy/releases) or build from source
+2. **Extract**: Extract the downloaded archive
+   ```bash
+   tar -xzf vibeproxy-linux-*.tar.gz
+   cd vibeproxy-linux
+   ```
+3. **Launch**: Run the application
+   ```bash
+   ./VibeProxy.Linux
+   ```
 
 ## Step 2: Connect Your Accounts
 
 Once VibeProxy is running:
 
-1. Click the **VibeProxy menu bar icon**
+1. Click the **VibeProxy system tray icon**
 2. Select **"Open Settings"**
 3. Click **"Connect"** next to Claude Code
    - Your browser will open for authentication
@@ -192,9 +199,9 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 
 ## Troubleshooting
 
-### VibeProxy Menu Bar Status
-- **Green dot**: Server is running
-- **Red dot**: Server is stopped
+### VibeProxy System Tray Status
+- **Active icon**: Server is running
+- **Inactive icon**: Server is stopped
 - **Click the status** to toggle the server on/off
 
 ### Connection Issues
@@ -208,7 +215,7 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 
 ### Verification Checklist
 
-1. ✅ VibeProxy is running (menu bar icon shows green)
+1. ✅ VibeProxy is running (system tray icon is active)
 2. ✅ Both Claude and Codex show as "Connected" in settings
 3. ✅ Factory CLI config has the custom models configured
 4. ✅ `droid` can select your custom models

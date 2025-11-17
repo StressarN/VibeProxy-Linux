@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to VibeProxy will be documented in this file.
+All notable changes to VibeProxy for Linux will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -117,34 +117,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Apple Silicon (M1/M2/M3/M4) requirement to README and installation guide
 - Clarified that Intel Macs are not supported
 
-## [1.0.0] - 2025-10-05
+## [2.0.0] - 2025-11-17
 
-Initial release of VibeProxy - a native macOS menu bar application for managing CLIProxyAPI.
+Initial release of VibeProxy for Linux - a native Linux desktop application for managing CLIProxyAPI.
 
 ### Features
 
-- **Native macOS Experience** - Clean SwiftUI interface with menu bar integration
-- **One-Click Server Management** - Start/stop the proxy server from your menu bar
-- **OAuth Integration** - Authenticate with Claude Code and Codex directly from the app
+- **Native Linux Experience** - Clean Avalonia UI with system tray integration
+- **One-Click Server Management** - Start/stop the proxy server from your system tray
+- **OAuth Integration** - Authenticate with Claude Code, Codex, Gemini, and Qwen directly from the app
 - **Real-Time Status** - Live connection status and automatic credential detection
 - **Auto-Updates** - Monitors auth files and updates UI in real-time
-- **Beautiful Icons** - Custom icons with dark mode support
-- **Self-Contained** - Everything bundled inside the .app (server binary, config, static files)
-- **Launch at Login** - Optional auto-start on macOS login
+- **System Tray Integration** - Convenient access from your system tray
+- **Self-Contained** - Everything bundled in the application (server binary, config, static files)
+- **Launch at Login** - Optional auto-start on Linux login
 - **Factory AI Integration** - Easy setup guide for Factory Droids
+- **Extended Thinking Support** - Claude's extended thinking with dynamic budgets (4K, 10K, 32K tokens)
 
 ### Technical
 
+- Built with .NET 8.0 and Avalonia UI framework
 - Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)
-- Code signed with Apple Developer ID
-- Notarized for seamless installation
-- Automated version injection from git tags
-- Automated GitHub Actions release workflow
+- MVVM architecture with reactive UI
+- Cross-platform Linux support (x64 and ARM64)
+- Automated build scripts and CI/CD workflow
 
 ### Requirements
 
-- macOS 13.0 (Ventura) or later
-- Apple Silicon (M1/M2/M3/M4) - Intel Macs are not supported
+- Linux (x64 or ARM64)
+- .NET 8.0 Runtime or later
 
 ---
 
