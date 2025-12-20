@@ -2,8 +2,10 @@ namespace VibeProxy.Linux.Services;
 
 public enum AuthCommand
 {
+    Antigravity,
     Claude,
     Codex,
+    Copilot,
     Gemini,
     Qwen
 }

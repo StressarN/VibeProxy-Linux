@@ -15,7 +15,7 @@ namespace VibeProxy.Linux.Services;
 public sealed class CliProxyService : IDisposable
 {
     private const int Port = 8318;
-    private const string ReleaseApi = "https://api.github.com/repos/router-for-me/CLIProxyAPI/releases/latest";
+    private const string ReleaseApi = "https://api.github.com/repos/router-for-me/CLIProxyAPIPlus/releases/latest";
     private readonly string _resourceDirectory;
     private readonly string _binaryPath;
     private readonly string _configPath;
@@ -160,11 +160,17 @@ public sealed class CliProxyService : IDisposable
 
         switch (command)
         {
+            case AuthCommand.Antigravity:
+                psi.ArgumentList.Add("-antigravity-login");
+                break;
             case AuthCommand.Claude:
                 psi.ArgumentList.Add("-claude-login");
                 break;
             case AuthCommand.Codex:
                 psi.ArgumentList.Add("-codex-login");
+                break;
+            case AuthCommand.Copilot:
+                psi.ArgumentList.Add("-copilot-login");
                 break;
             case AuthCommand.Gemini:
                 psi.ArgumentList.Add("-login");

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -27,6 +28,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private bool _thinkingProxyRunning;
     private string _serverStatusText = "Server: Stopped";
     private string _qwenEmail = string.Empty;
+    private AuthAccount? _accountToRemove;
     private bool _disposed;
 
     public SettingsViewModel()
@@ -76,13 +78,15 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             UpdateServerStatusText();
         };
 
-        _authStatusService.StatusesChanged += (_, statuses) => UpdateStatuses(statuses);
+        _authStatusService.AccountsChanged += (_, accounts) => UpdateAccounts(accounts);
 
         StartCommand = new AsyncCommand(StartServerAsync);
         StopCommand = new AsyncCommand(StopServerAsync);
         CopyUrlCommand = new AsyncCommand(CopyServerUrlAsync);
+        ConnectAntigravityCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Antigravity, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Antigravity, null)));
         ConnectClaudeCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Claude, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Claude, null)));
         ConnectCodexCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Codex, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Codex, null)));
+        ConnectCopilotCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Copilot, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Copilot, null)));
         ConnectGeminiCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Gemini, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Gemini, null)));
         ConnectQwenCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Qwen, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Qwen, QwenEmail)));
         OpenAuthFolderCommand = new AsyncCommand(OpenAuthFolderAsync);
@@ -125,21 +129,33 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _qwenEmail, value);
     }
 
-    public AuthStatus ClaudeStatus { get; private set; } = new(AuthProviderType.Claude);
-    public AuthStatus CodexStatus { get; private set; } = new(AuthProviderType.Codex);
-    public AuthStatus GeminiStatus { get; private set; } = new(AuthProviderType.Gemini);
-    public AuthStatus QwenStatus { get; private set; } = new(AuthProviderType.Qwen);
+    public AuthAccount? AccountToRemove
+    {
+        get => _accountToRemove;
+        set => SetProperty(ref _accountToRemove, value);
+    }
 
+    public ObservableCollection<AuthAccount> AntigravityAccounts { get; } = [];
+    public ObservableCollection<AuthAccount> ClaudeAccounts { get; } = [];
+    public ObservableCollection<AuthAccount> CodexAccounts { get; } = [];
+    public ObservableCollection<AuthAccount> CopilotAccounts { get; } = [];
+    public ObservableCollection<AuthAccount> GeminiAccounts { get; } = [];
+    public ObservableCollection<AuthAccount> QwenAccounts { get; } = [];
+
+    public bool IsAuthenticatingAntigravity => GetBusy(AuthProviderType.Antigravity);
     public bool IsAuthenticatingClaude => GetBusy(AuthProviderType.Claude);
     public bool IsAuthenticatingCodex => GetBusy(AuthProviderType.Codex);
+    public bool IsAuthenticatingCopilot => GetBusy(AuthProviderType.Copilot);
     public bool IsAuthenticatingGemini => GetBusy(AuthProviderType.Gemini);
     public bool IsAuthenticatingQwen => GetBusy(AuthProviderType.Qwen);
 
     public ICommand StartCommand { get; }
     public ICommand StopCommand { get; }
     public ICommand CopyUrlCommand { get; }
+    public ICommand ConnectAntigravityCommand { get; }
     public ICommand ConnectClaudeCommand { get; }
     public ICommand ConnectCodexCommand { get; }
+    public ICommand ConnectCopilotCommand { get; }
     public ICommand ConnectGeminiCommand { get; }
     public ICommand ConnectQwenCommand { get; }
     public ICommand OpenAuthFolderCommand { get; }
@@ -223,7 +239,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         var launch = await _launchAtLoginService.IsEnabledAsync().ConfigureAwait(false);
         UpdateLaunchAtLoginFlag(launch);
         await _authStatusService.RefreshAsync().ConfigureAwait(false);
-        UpdateStatuses(_authStatusService.CurrentStatuses);
+        UpdateAccounts(_authStatusService.CurrentAccounts);
         UpdateServerStatusText();
     }
 
@@ -261,37 +277,74 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void UpdateStatuses(IReadOnlyDictionary<AuthProviderType, AuthStatus> snapshot)
+    private void UpdateAccounts(IReadOnlyDictionary<AuthProviderType, IReadOnlyList<AuthAccount>> snapshot)
     {
-        if (snapshot.TryGetValue(AuthProviderType.Claude, out var claude))
-        {
-            ClaudeStatus = claude;
-            RaisePropertyChanged(nameof(ClaudeStatus));
-        }
-
-        if (snapshot.TryGetValue(AuthProviderType.Codex, out var codex))
-        {
-            CodexStatus = codex;
-            RaisePropertyChanged(nameof(CodexStatus));
-        }
-
-        if (snapshot.TryGetValue(AuthProviderType.Gemini, out var gemini))
-        {
-            GeminiStatus = gemini;
-            RaisePropertyChanged(nameof(GeminiStatus));
-        }
-
-        if (snapshot.TryGetValue(AuthProviderType.Qwen, out var qwen))
-        {
-            QwenStatus = qwen;
-            RaisePropertyChanged(nameof(QwenStatus));
-        }
+        UpdateAccountCollection(AntigravityAccounts, snapshot.GetValueOrDefault(AuthProviderType.Antigravity) ?? []);
+        UpdateAccountCollection(ClaudeAccounts, snapshot.GetValueOrDefault(AuthProviderType.Claude) ?? []);
+        UpdateAccountCollection(CodexAccounts, snapshot.GetValueOrDefault(AuthProviderType.Codex) ?? []);
+        UpdateAccountCollection(CopilotAccounts, snapshot.GetValueOrDefault(AuthProviderType.Copilot) ?? []);
+        UpdateAccountCollection(GeminiAccounts, snapshot.GetValueOrDefault(AuthProviderType.Gemini) ?? []);
+        UpdateAccountCollection(QwenAccounts, snapshot.GetValueOrDefault(AuthProviderType.Qwen) ?? []);
 
         StatusItems.Clear();
-        StatusItems.Add(new StatusItem("Claude", ClaudeStatus.DisplayText));
-        StatusItems.Add(new StatusItem("Codex", CodexStatus.DisplayText));
-        StatusItems.Add(new StatusItem("Gemini", GeminiStatus.DisplayText));
-        StatusItems.Add(new StatusItem("Qwen", QwenStatus.DisplayText));
+        StatusItems.Add(new StatusItem("Antigravity", FormatAccountStatus(AntigravityAccounts)));
+        StatusItems.Add(new StatusItem("Claude Code", FormatAccountStatus(ClaudeAccounts)));
+        StatusItems.Add(new StatusItem("Codex", FormatAccountStatus(CodexAccounts)));
+        StatusItems.Add(new StatusItem("GitHub Copilot", FormatAccountStatus(CopilotAccounts)));
+        StatusItems.Add(new StatusItem("Gemini", FormatAccountStatus(GeminiAccounts)));
+        StatusItems.Add(new StatusItem("Qwen", FormatAccountStatus(QwenAccounts)));
+    }
+
+    private static void UpdateAccountCollection(ObservableCollection<AuthAccount> collection, IReadOnlyList<AuthAccount> accounts)
+    {
+        collection.Clear();
+        foreach (var account in accounts)
+        {
+            collection.Add(account);
+        }
+    }
+
+    private static string FormatAccountStatus(ObservableCollection<AuthAccount> accounts)
+    {
+        if (accounts.Count == 0)
+        {
+            return "Not Connected";
+        }
+
+        var active = accounts.Count(a => !a.IsExpired);
+        var expired = accounts.Count - active;
+        if (expired == 0)
+        {
+            return accounts.Count == 1 ? accounts[0].DisplayName : $"{active} connected";
+        }
+
+        return $"{active} active, {expired} expired";
+    }
+
+    public async Task RemoveAccountAsync(AuthAccount account)
+    {
+        var wasRunning = _cliProxyService.IsRunning;
+
+        if (wasRunning)
+        {
+            await StopServerAsync().ConfigureAwait(false);
+        }
+
+        var deleted = _authStatusService.DeleteAccount(account);
+        if (deleted)
+        {
+            _notificationService.Show("Account Removed", $"Removed {account.DisplayName} from {account.Type.GetDisplayName()}");
+            await _authStatusService.RefreshAsync().ConfigureAwait(false);
+        }
+        else
+        {
+            _notificationService.Show("Removal Failed", "Could not remove the account file.");
+        }
+
+        if (wasRunning)
+        {
+            await StartServerAsync().ConfigureAwait(false);
+        }
     }
 
     private async Task UpdateLaunchAtLoginAsync()
@@ -328,8 +381,10 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             _authBusy[provider] = busy;
         }
 
+        RaisePropertyChanged(nameof(IsAuthenticatingAntigravity));
         RaisePropertyChanged(nameof(IsAuthenticatingClaude));
         RaisePropertyChanged(nameof(IsAuthenticatingCodex));
+        RaisePropertyChanged(nameof(IsAuthenticatingCopilot));
         RaisePropertyChanged(nameof(IsAuthenticatingGemini));
         RaisePropertyChanged(nameof(IsAuthenticatingQwen));
     }

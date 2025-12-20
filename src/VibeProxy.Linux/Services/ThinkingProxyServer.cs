@@ -3,8 +3,10 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,9 +16,13 @@ public sealed class ThinkingProxyServer : IDisposable
 {
     private const int ProxyPort = 8317;
     private const int TargetPort = 8318;
+    private const string AmpHost = "ampcode.com";
+    private const int AmpPort = 443;
+    private const string InterleavedThinkingBeta = "interleaved-thinking-2025-05-14";
 
     private TcpListener? _listener;
     private CancellationTokenSource? _cts;
+    private readonly SemaphoreSlim _stateLock = new(1, 1);
     private bool _disposed;
 
     public event EventHandler<bool>? StatusChanged;
@@ -56,20 +62,28 @@ public sealed class ThinkingProxyServer : IDisposable
         await Task.CompletedTask;
     }
 
-    public Task StopAsync()
+    public async Task StopAsync()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = null;
-        _listener?.Stop();
-        _listener = null;
-        if (IsRunning)
+        await _stateLock.WaitAsync().ConfigureAwait(false);
+        try
         {
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            _listener?.Stop();
+            _listener = null;
             IsRunning = false;
             StatusChanged?.Invoke(this, false);
         }
-
-        return Task.CompletedTask;
+        finally
+        {
+            _stateLock.Release();
+        }
     }
 
     private async Task AcceptLoopAsync(CancellationToken cancellationToken)
@@ -111,11 +125,32 @@ public sealed class ThinkingProxyServer : IDisposable
 
             var (method, path, version, headers, body) = requestData.Value;
             var bodyText = Encoding.UTF8.GetString(body);
+
+            // Rewrite Amp CLI paths
+            var rewrittenPath = path;
+            if (path.StartsWith("/auth/cli-login", StringComparison.OrdinalIgnoreCase))
+            {
+                rewrittenPath = "/api" + path;
+            }
+            else if (path.StartsWith("/provider/", StringComparison.OrdinalIgnoreCase))
+            {
+                rewrittenPath = "/api" + path;
+            }
+
+            // Check if this is an Amp management API request (not provider routes)
+            if (rewrittenPath.StartsWith("/api/", StringComparison.OrdinalIgnoreCase) &&
+                !rewrittenPath.StartsWith("/api/provider/", StringComparison.OrdinalIgnoreCase))
+            {
+                var ampPath = rewrittenPath[4..]; // Remove "/api" prefix
+                await ForwardToAmpAsync(method, ampPath, version, headers, bodyText, clientStream, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             var shouldTransform = string.Equals(method, "POST", StringComparison.OrdinalIgnoreCase);
-            var (modifiedBody, transformed) = shouldTransform ? ThinkingModelTransformer.Apply(bodyText) : (bodyText, false);
+            var (modifiedBody, thinkingEnabled) = shouldTransform ? ThinkingModelTransformer.Apply(bodyText) : (bodyText, false);
             var payloadBytes = Encoding.UTF8.GetBytes(modifiedBody);
 
-            await ForwardRequestAsync(method, path, version, headers, payloadBytes, transformed, clientStream, cancellationToken).ConfigureAwait(false);
+            await ForwardRequestAsync(method, rewrittenPath, version, headers, payloadBytes, thinkingEnabled, clientStream, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or SocketException)
         {
@@ -241,7 +276,7 @@ public sealed class ThinkingProxyServer : IDisposable
         string version,
         List<KeyValuePair<string, string>> headers,
         byte[] body,
-        bool transformed,
+        bool thinkingEnabled,
         Stream clientStream,
         CancellationToken cancellationToken)
     {
@@ -253,6 +288,7 @@ public sealed class ThinkingProxyServer : IDisposable
         var builder = new StringBuilder();
         builder.Append(method).Append(' ').Append(path).Append(' ').Append(version).Append("\r\n");
 
+        string? existingBetaHeader = null;
         foreach (var header in headers)
         {
             var lower = header.Key.ToLowerInvariant();
@@ -261,7 +297,37 @@ public sealed class ThinkingProxyServer : IDisposable
                 continue;
             }
 
+            // Capture existing anthropic-beta header for merging
+            if (lower == "anthropic-beta")
+            {
+                existingBetaHeader = header.Value;
+                continue;
+            }
+
             builder.Append(header.Key).Append(": ").Append(header.Value).Append("\r\n");
+        }
+
+        // Add/merge anthropic-beta header when thinking is enabled
+        if (thinkingEnabled)
+        {
+            var betaValue = InterleavedThinkingBeta;
+            if (!string.IsNullOrEmpty(existingBetaHeader))
+            {
+                if (!existingBetaHeader.Contains(InterleavedThinkingBeta, StringComparison.Ordinal))
+                {
+                    betaValue = $"{existingBetaHeader},{InterleavedThinkingBeta}";
+                }
+                else
+                {
+                    betaValue = existingBetaHeader;
+                }
+            }
+            builder.Append("anthropic-beta: ").Append(betaValue).Append("\r\n");
+        }
+        else if (!string.IsNullOrEmpty(existingBetaHeader))
+        {
+            // Pass through existing header when thinking not enabled
+            builder.Append("anthropic-beta: ").Append(existingBetaHeader).Append("\r\n");
         }
 
         builder.Append("Host: 127.0.0.1:").Append(TargetPort).Append("\r\n");
@@ -292,6 +358,76 @@ public sealed class ThinkingProxyServer : IDisposable
         }
     }
 
+    private static async Task ForwardToAmpAsync(
+        string method,
+        string path,
+        string version,
+        List<KeyValuePair<string, string>> headers,
+        string body,
+        Stream clientStream,
+        CancellationToken cancellationToken)
+    {
+        using var targetClient = new TcpClient();
+        await targetClient.ConnectAsync(AmpHost, AmpPort, cancellationToken).ConfigureAwait(false);
+
+        await using var sslStream = new SslStream(targetClient.GetStream(), false);
+        await sslStream.AuthenticateAsClientAsync(AmpHost).ConfigureAwait(false);
+
+        var builder = new StringBuilder();
+        builder.Append(method).Append(' ').Append(path).Append(' ').Append(version).Append("\r\n");
+
+        var excludedHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "host", "content-length", "connection", "transfer-encoding"
+        };
+
+        foreach (var header in headers)
+        {
+            if (!excludedHeaders.Contains(header.Key))
+            {
+                builder.Append(header.Key).Append(": ").Append(header.Value).Append("\r\n");
+            }
+        }
+
+        var contentLength = Encoding.UTF8.GetByteCount(body);
+        builder.Append("Host: ").Append(AmpHost).Append("\r\n");
+        builder.Append("Connection: close\r\n");
+        builder.Append("Content-Length: ").Append(contentLength).Append("\r\n\r\n");
+        builder.Append(body);
+
+        var requestBytes = Encoding.UTF8.GetBytes(builder.ToString());
+        await sslStream.WriteAsync(requestBytes, cancellationToken).ConfigureAwait(false);
+        await sslStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+
+        var buffer = ArrayPool<byte>.Shared.Rent(65536);
+        try
+        {
+            using var ms = new MemoryStream();
+            int bytesRead;
+            while ((bytesRead = await sslStream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+            {
+                ms.Write(buffer, 0, bytesRead);
+            }
+
+            var responseBytes = ms.ToArray();
+
+            // Rewrite Location headers to prepend /api/
+            var responseText = Encoding.UTF8.GetString(responseBytes);
+            responseText = Regex.Replace(
+                responseText,
+                @"(\r\n[Ll]ocation:\s*)/",
+                "$1/api/",
+                RegexOptions.None);
+
+            var modifiedResponse = Encoding.UTF8.GetBytes(responseText);
+            await clientStream.WriteAsync(modifiedResponse, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
     private static async Task SendErrorAsync(Stream clientStream, int statusCode, string message, CancellationToken cancellationToken)
     {
         var body = Encoding.UTF8.GetBytes(message);
@@ -312,5 +448,6 @@ public sealed class ThinkingProxyServer : IDisposable
 
         _disposed = true;
         StopAsync().GetAwaiter().GetResult();
+        _stateLock.Dispose();
     }
 }

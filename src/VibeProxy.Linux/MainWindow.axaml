@@ -5,7 +5,7 @@
         xmlns:vm="clr-namespace:VibeProxy.Linux.ViewModels"
         xmlns:conv="clr-namespace:VibeProxy.Linux.Utilities"
         x:Class="VibeProxy.Linux.MainWindow"
-        Width="720" Height="540"
+        Width="720" Height="620"
         Title="VibeProxy Linux"
         mc:Ignorable="d">
   <Window.DataContext>
@@ -24,34 +24,38 @@
       <StackPanel Grid.Column="0" Margin="12" Spacing="8">
         <TextBlock Text="Authentication" FontWeight="SemiBold" />
         <StackPanel Spacing="4">
-          <Button Content="Connect Claude" Command="{Binding ConnectClaudeCommand}" IsEnabled="{Binding IsAuthenticatingClaude, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
-          <Button Content="Connect Codex" Command="{Binding ConnectCodexCommand}" IsEnabled="{Binding IsAuthenticatingCodex, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
-          <Button Content="Connect Gemini" Command="{Binding ConnectGeminiCommand}" IsEnabled="{Binding IsAuthenticatingGemini, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
+          <Button Content="Add Antigravity Account" Command="{Binding ConnectAntigravityCommand}" IsEnabled="{Binding IsAuthenticatingAntigravity, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
+          <Button Content="Add Claude Code Account" Command="{Binding ConnectClaudeCommand}" IsEnabled="{Binding IsAuthenticatingClaude, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
+          <Button Content="Add Codex Account" Command="{Binding ConnectCodexCommand}" IsEnabled="{Binding IsAuthenticatingCodex, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
+          <Button Content="Add GitHub Copilot Account" Command="{Binding ConnectCopilotCommand}" IsEnabled="{Binding IsAuthenticatingCopilot, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
+          <Button Content="Add Gemini Account" Command="{Binding ConnectGeminiCommand}" IsEnabled="{Binding IsAuthenticatingGemini, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <TextBox Width="200" Watermark="Qwen Email" Text="{Binding QwenEmail, Mode=TwoWay}" />
-            <Button Content="Connect Qwen" Command="{Binding ConnectQwenCommand}" IsEnabled="{Binding IsAuthenticatingQwen, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
+            <TextBox Width="180" Watermark="Qwen Email" Text="{Binding QwenEmail, Mode=TwoWay}" />
+            <Button Content="Add Qwen" Command="{Binding ConnectQwenCommand}" IsEnabled="{Binding IsAuthenticatingQwen, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
           </StackPanel>
-          <Button Content="Open Auth Folder" Command="{Binding OpenAuthFolderCommand}" />
+          <Button Content="Open Auth Folder" Command="{Binding OpenAuthFolderCommand}" Margin="0,8,0,0" />
         </StackPanel>
       </StackPanel>
 
       <StackPanel Grid.Column="1" Margin="12" Spacing="8">
-        <TextBlock Text="Status" FontWeight="SemiBold" />
+        <TextBlock Text="Connected Accounts" FontWeight="SemiBold" />
         <ItemsControl ItemsSource="{Binding StatusItems}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <TextBlock Text="{Binding Name}" Width="90" />
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                <TextBlock Text="{Binding Name}" Width="110" FontWeight="Medium" />
                 <TextBlock Text="{Binding Status}" />
               </StackPanel>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
+        <TextBlock Text="Multiple accounts per provider supported" FontSize="11" Foreground="Gray" Margin="0,4,0,0" />
+        <TextBlock Text="Round-robin with auto-failover on rate limits" FontSize="11" Foreground="Gray" />
       </StackPanel>
 
       <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="12" Spacing="6">
         <TextBlock Text="Logs" FontWeight="SemiBold" />
-        <Border Height="220" BorderBrush="Gray" BorderThickness="1">
+        <Border Height="200" BorderBrush="Gray" BorderThickness="1">
           <ScrollViewer>
             <ItemsControl ItemsSource="{Binding LogLines}" />
           </ScrollViewer>
