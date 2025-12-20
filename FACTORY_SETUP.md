@@ -156,6 +156,20 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
       "base_url": "http://localhost:8317/v1",
       "api_key": "dummy-not-used",
       "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5.2 (High)",
+      "model": "gpt-5.2-high",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
+    },
+    {
+      "model_display_name": "GPT-5.2 (XHigh)",
+      "model": "gpt-5.2-xhigh",
+      "base_url": "http://localhost:8317/v1",
+      "api_key": "dummy-not-used",
+      "provider": "openai"
     }
   ]
 }
@@ -196,6 +210,7 @@ Edit your Factory configuration file at `~/.factory/config.json` (if the file do
 - `gpt-5-minimal` / `low` / `medium` / `high` - Different reasoning effort levels
 - `gpt-5-codex` - Optimized for coding
 - `gpt-5-codex-low` / `medium` / `high` - Codex with different reasoning levels
+- `gpt-5.2-high` / `gpt-5.2-xhigh` - GPT-5.2 with high/extra-high reasoning effort
 
 ## Troubleshooting
 
