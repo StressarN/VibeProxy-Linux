@@ -126,23 +126,29 @@ public sealed class ThinkingProxyServer : IDisposable
             var (method, path, version, headers, body) = requestData.Value;
             var bodyText = Encoding.UTF8.GetString(body);
 
+            if (path.StartsWith("/auth/cli-login", StringComparison.OrdinalIgnoreCase)
+                || path.StartsWith("/api/auth/cli-login", StringComparison.OrdinalIgnoreCase))
+            {
+                var loginPath = path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase) ? path[4..] : path;
+                var redirectUrl = $"https://{AmpHost}{loginPath}";
+                await SendRedirectAsync(clientStream, redirectUrl, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             // Rewrite Amp CLI paths
             var rewrittenPath = path;
-            if (path.StartsWith("/auth/cli-login", StringComparison.OrdinalIgnoreCase))
-            {
-                rewrittenPath = "/api" + path;
-            }
-            else if (path.StartsWith("/provider/", StringComparison.OrdinalIgnoreCase))
+            if (path.StartsWith("/provider/", StringComparison.OrdinalIgnoreCase))
             {
                 rewrittenPath = "/api" + path;
             }
 
-            // Check if this is an Amp management API request (not provider routes)
-            if (rewrittenPath.StartsWith("/api/", StringComparison.OrdinalIgnoreCase) &&
-                !rewrittenPath.StartsWith("/api/provider/", StringComparison.OrdinalIgnoreCase))
+            // Check if this is an Amp management request (anything not targeting provider or /v1)
+            var isProviderPath = rewrittenPath.StartsWith("/api/provider/", StringComparison.OrdinalIgnoreCase);
+            var isCliProxyPath = rewrittenPath.StartsWith("/v1/", StringComparison.OrdinalIgnoreCase)
+                || rewrittenPath.StartsWith("/api/v1/", StringComparison.OrdinalIgnoreCase);
+            if (!isProviderPath && !isCliProxyPath)
             {
-                var ampPath = rewrittenPath[4..]; // Remove "/api" prefix
-                await ForwardToAmpAsync(method, ampPath, version, headers, bodyText, clientStream, cancellationToken).ConfigureAwait(false);
+                await ForwardToAmpAsync(method, rewrittenPath, version, headers, bodyText, clientStream, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -411,13 +417,28 @@ public sealed class ThinkingProxyServer : IDisposable
 
             var responseBytes = ms.ToArray();
 
-            // Rewrite Location headers to prepend /api/
+            // Rewrite Location headers to keep browser on localhost proxy
             var responseText = Encoding.UTF8.GetString(responseBytes);
             responseText = Regex.Replace(
                 responseText,
                 @"(\r\n[Ll]ocation:\s*)/",
                 "$1/api/",
                 RegexOptions.None);
+            responseText = Regex.Replace(
+                responseText,
+                @"(\r\n[Ll]ocation:\s*)https?://ampcode\.com/",
+                "$1/api/",
+                RegexOptions.IgnoreCase);
+            responseText = Regex.Replace(
+                responseText,
+                @"Domain=\.ampcode\.com",
+                "Domain=localhost",
+                RegexOptions.IgnoreCase);
+            responseText = Regex.Replace(
+                responseText,
+                @"Domain=ampcode\.com",
+                "Domain=localhost",
+                RegexOptions.IgnoreCase);
 
             var modifiedResponse = Encoding.UTF8.GetBytes(responseText);
             await clientStream.WriteAsync(modifiedResponse, cancellationToken).ConfigureAwait(false);
@@ -437,6 +458,12 @@ public sealed class ThinkingProxyServer : IDisposable
         {
             await clientStream.WriteAsync(body, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private static async Task SendRedirectAsync(Stream clientStream, string location, CancellationToken cancellationToken)
+    {
+        var header = Encoding.ASCII.GetBytes($"HTTP/1.1 302 Found\r\nLocation: {location}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        await clientStream.WriteAsync(header, cancellationToken).ConfigureAwait(false);
     }
 
     public void Dispose()

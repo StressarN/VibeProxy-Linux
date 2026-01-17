@@ -5,7 +5,7 @@
         xmlns:vm="clr-namespace:VibeProxy.Linux.ViewModels"
         xmlns:conv="clr-namespace:VibeProxy.Linux.Utilities"
         x:Class="VibeProxy.Linux.MainWindow"
-        Width="720" Height="620"
+        Width="720" Height="760"
         Title="VibeProxy Linux"
         mc:Ignorable="d">
   <Window.DataContext>
@@ -33,7 +33,22 @@
             <TextBox Width="180" Watermark="Qwen Email" Text="{Binding QwenEmail, Mode=TwoWay}" />
             <Button Content="Add Qwen" Command="{Binding ConnectQwenCommand}" IsEnabled="{Binding IsAuthenticatingQwen, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
           </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBox Width="180" Watermark="Z.AI API Key" Text="{Binding ZaiApiKey, Mode=TwoWay}" />
+            <Button Content="Add Z.AI Key" Command="{Binding SaveZaiApiKeyCommand}" />
+          </StackPanel>
           <Button Content="Open Auth Folder" Command="{Binding OpenAuthFolderCommand}" Margin="0,8,0,0" />
+        </StackPanel>
+
+        <TextBlock Text="Provider Priority" FontWeight="SemiBold" Margin="0,12,0,0" />
+        <StackPanel Spacing="4">
+          <ToggleSwitch Content="Antigravity" IsChecked="{Binding IsAntigravityEnabled, Mode=TwoWay}" />
+          <ToggleSwitch Content="Claude Code" IsChecked="{Binding IsClaudeEnabled, Mode=TwoWay}" />
+          <ToggleSwitch Content="Codex" IsChecked="{Binding IsCodexEnabled, Mode=TwoWay}" />
+          <ToggleSwitch Content="GitHub Copilot" IsChecked="{Binding IsCopilotEnabled, Mode=TwoWay}" />
+          <ToggleSwitch Content="Gemini" IsChecked="{Binding IsGeminiEnabled, Mode=TwoWay}" />
+          <ToggleSwitch Content="Qwen" IsChecked="{Binding IsQwenEnabled, Mode=TwoWay}" />
+          <ToggleSwitch Content="Z.AI GLM" IsChecked="{Binding IsZaiEnabled, Mode=TwoWay}" />
         </StackPanel>
       </StackPanel>
 

@@ -10,7 +10,8 @@ public enum AuthProviderType
     Codex,
     Copilot,
     Gemini,
-    Qwen
+    Qwen,
+    Zai
 }
 
 public static class AuthProviderTypeExtensions
@@ -23,7 +24,8 @@ public static class AuthProviderTypeExtensions
         ["github-copilot"] = AuthProviderType.Copilot,
         ["copilot"] = AuthProviderType.Copilot,
         ["gemini"] = AuthProviderType.Gemini,
-        ["qwen"] = AuthProviderType.Qwen
+        ["qwen"] = AuthProviderType.Qwen,
+        ["zai"] = AuthProviderType.Zai
     };
 
     public static bool TryParseFromJson(string? typeString, out AuthProviderType provider)
@@ -45,6 +47,7 @@ public static class AuthProviderTypeExtensions
         AuthProviderType.Copilot => "GitHub Copilot",
         AuthProviderType.Gemini => "Gemini",
         AuthProviderType.Qwen => "Qwen",
+        AuthProviderType.Zai => "Z.AI GLM",
         _ => provider.ToString()
     };
 }

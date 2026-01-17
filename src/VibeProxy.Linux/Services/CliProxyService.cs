@@ -18,17 +18,19 @@ public sealed class CliProxyService : IDisposable
     private const string ReleaseApi = "https://api.github.com/repos/router-for-me/CLIProxyAPIPlus/releases/latest";
     private readonly string _resourceDirectory;
     private readonly string _binaryPath;
-    private readonly string _configPath;
+    private readonly string _bundledConfigPath;
+    private readonly ProviderConfigService _providerConfigService;
     private readonly RingBuffer<string> _logBuffer = new(1000);
     private readonly object _syncRoot = new();
     private Process? _process;
     private bool _disposed;
 
-    public CliProxyService(string resourceDirectory)
+    public CliProxyService(string resourceDirectory, ProviderConfigService providerConfigService)
     {
         _resourceDirectory = resourceDirectory;
         _binaryPath = Path.Combine(resourceDirectory, "cli-proxy-api");
-        _configPath = Path.Combine(resourceDirectory, "config.yaml");
+        _bundledConfigPath = Path.Combine(resourceDirectory, "config.yaml");
+        _providerConfigService = providerConfigService;
     }
 
     public event EventHandler<bool>? StatusChanged;
@@ -57,6 +59,13 @@ public sealed class CliProxyService : IDisposable
             EnsureBinaryAsync(cancellationToken).GetAwaiter().GetResult();
             KillOrphanedProcesses();
 
+            var configPath = _providerConfigService.GetConfigPath();
+            if (string.IsNullOrWhiteSpace(configPath) || !File.Exists(configPath))
+            {
+                AppendLog("Failed to locate config.yaml for cli-proxy-api");
+                return false;
+            }
+
             var psi = new ProcessStartInfo
             {
                 FileName = _binaryPath,
@@ -67,7 +76,7 @@ public sealed class CliProxyService : IDisposable
             };
 
             psi.ArgumentList.Add("--config");
-            psi.ArgumentList.Add(_configPath);
+            psi.ArgumentList.Add(configPath);
 
             _process = new Process
             {
@@ -156,7 +165,7 @@ public sealed class CliProxyService : IDisposable
         };
 
         psi.ArgumentList.Add("--config");
-        psi.ArgumentList.Add(_configPath);
+        psi.ArgumentList.Add(_bundledConfigPath);
 
         switch (command)
         {
@@ -271,9 +280,9 @@ public sealed class CliProxyService : IDisposable
 
     private void EnsureConfig()
     {
-        if (!File.Exists(_configPath))
+        if (!File.Exists(_bundledConfigPath))
         {
-            throw new FileNotFoundException("config.yaml is missing from the Resources folder.", _configPath);
+            throw new FileNotFoundException("config.yaml is missing from the Resources folder.", _bundledConfigPath);
         }
     }
 
@@ -319,13 +328,13 @@ public sealed class CliProxyService : IDisposable
         var tempExtract = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         ZipFile.ExtractToDirectory(tempZip, tempExtract.FullName, overwriteFiles: true);
 
-        var downloadedBinary = Directory.GetFiles(tempExtract.FullName, "cli-proxy-api*", SearchOption.AllDirectories);
-        if (downloadedBinary.Length == 0)
+        var downloadedBinary = FindDownloadedBinary(tempExtract.FullName);
+        if (string.IsNullOrWhiteSpace(downloadedBinary))
         {
             throw new FileNotFoundException("cli-proxy-api executable not found in archive.");
         }
 
-        File.Copy(downloadedBinary[0], _binaryPath, overwrite: true);
+        File.Copy(downloadedBinary, _binaryPath, overwrite: true);
         try
         {
             File.SetUnixFileMode(_binaryPath, UnixFileMode.UserRead | UnixFileMode.UserExecute | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
@@ -419,5 +428,36 @@ public sealed class CliProxyService : IDisposable
         _disposed = true;
         _process?.Kill(true);
         _process?.Dispose();
+    }
+
+    private static string? FindDownloadedBinary(string extractRoot)
+    {
+        foreach (var file in Directory.EnumerateFiles(extractRoot, "*", SearchOption.AllDirectories))
+        {
+            var name = Path.GetFileName(file);
+            if (name.Equals("cli-proxy-api", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("cli-proxy-api-plus", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("CLIProxyAPIPlus", StringComparison.OrdinalIgnoreCase))
+            {
+                return file;
+            }
+        }
+
+        foreach (var file in Directory.EnumerateFiles(extractRoot, "*", SearchOption.AllDirectories))
+        {
+            try
+            {
+                var mode = File.GetUnixFileMode(file);
+                if (mode.HasFlag(UnixFileMode.UserExecute) || mode.HasFlag(UnixFileMode.GroupExecute) || mode.HasFlag(UnixFileMode.OtherExecute))
+                {
+                    return file;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        return null;
     }
 }

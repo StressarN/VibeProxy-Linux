@@ -10,6 +10,7 @@ using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
 using VibeProxy.Linux.Models;
 using VibeProxy.Linux.Services;
 using VibeProxy.Linux.Utilities;
@@ -21,6 +22,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private readonly CliProxyService _cliProxyService;
     private readonly ThinkingProxyServer _thinkingProxyServer;
     private readonly AuthStatusService _authStatusService;
+    private readonly ProviderConfigService _providerConfigService;
     private readonly LaunchAtLoginService _launchAtLoginService;
     private readonly NotificationService _notificationService;
     private readonly Dictionary<AuthProviderType, bool> _authBusy = new();
@@ -28,12 +30,27 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private bool _thinkingProxyRunning;
     private string _serverStatusText = "Server: Stopped";
     private string _qwenEmail = string.Empty;
+    private string _zaiApiKey = string.Empty;
+    private bool _isAntigravityEnabled = true;
+    private bool _isClaudeEnabled = true;
+    private bool _isCodexEnabled = true;
+    private bool _isCopilotEnabled = true;
+    private bool _isGeminiEnabled = true;
+    private bool _isQwenEnabled = true;
+    private bool _isZaiEnabled = true;
+    private bool _suppressProviderUpdates;
     private AuthAccount? _accountToRemove;
     private bool _disposed;
 
     public SettingsViewModel()
+        : this(CreateProviderConfigService())
+    {
+    }
+
+    private SettingsViewModel(ProviderConfigService providerConfigService)
         : this(
-            new CliProxyService(Path.Combine(AppContext.BaseDirectory, "Resources")),
+            providerConfigService,
+            new CliProxyService(Path.Combine(AppContext.BaseDirectory, "Resources"), providerConfigService),
             new ThinkingProxyServer(),
             new AuthStatusService(),
             new LaunchAtLoginService(),
@@ -42,12 +59,14 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     }
 
     public SettingsViewModel(
+        ProviderConfigService providerConfigService,
         CliProxyService cliProxyService,
         ThinkingProxyServer thinkingProxyServer,
         AuthStatusService authStatusService,
         LaunchAtLoginService launchAtLoginService,
         NotificationService notificationService)
     {
+        _providerConfigService = providerConfigService;
         _cliProxyService = cliProxyService;
         _thinkingProxyServer = thinkingProxyServer;
         _authStatusService = authStatusService;
@@ -59,26 +78,35 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
         _cliProxyService.StatusChanged += (_, _) =>
         {
-            RaisePropertyChanged(nameof(IsServerRunning));
-            UpdateServerStatusText();
+            PostToUi(() =>
+            {
+                RaisePropertyChanged(nameof(IsServerRunning));
+                UpdateServerStatusText();
+            });
         };
         _cliProxyService.LogsUpdated += (_, logs) =>
         {
-            LogLines.Clear();
-            foreach (var line in logs)
+            PostToUi(() =>
             {
-                LogLines.Add(line);
-            }
+                LogLines.Clear();
+                foreach (var line in logs)
+                {
+                    LogLines.Add(line);
+                }
+            });
         };
 
         _thinkingProxyServer.StatusChanged += (_, running) =>
         {
-            _thinkingProxyRunning = running;
-            RaisePropertyChanged(nameof(IsThinkingProxyRunning));
-            UpdateServerStatusText();
+            PostToUi(() =>
+            {
+                _thinkingProxyRunning = running;
+                RaisePropertyChanged(nameof(IsThinkingProxyRunning));
+                UpdateServerStatusText();
+            });
         };
 
-        _authStatusService.AccountsChanged += (_, accounts) => UpdateAccounts(accounts);
+        _authStatusService.AccountsChanged += (_, accounts) => PostToUi(() => UpdateAccounts(accounts));
 
         StartCommand = new AsyncCommand(StartServerAsync);
         StopCommand = new AsyncCommand(StopServerAsync);
@@ -89,6 +117,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         ConnectCopilotCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Copilot, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Copilot, null)));
         ConnectGeminiCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Gemini, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Gemini, null)));
         ConnectQwenCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Qwen, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Qwen, QwenEmail)));
+        SaveZaiApiKeyCommand = new AsyncCommand(SaveZaiApiKeyAsync);
         OpenAuthFolderCommand = new AsyncCommand(OpenAuthFolderAsync);
         ToggleLaunchCommand = new AsyncCommand(UpdateLaunchAtLoginAsync);
 
@@ -129,6 +158,54 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _qwenEmail, value);
     }
 
+    public string ZaiApiKey
+    {
+        get => _zaiApiKey;
+        set => SetProperty(ref _zaiApiKey, value);
+    }
+
+    public bool IsAntigravityEnabled
+    {
+        get => _isAntigravityEnabled;
+        set => SetProviderEnabled(ref _isAntigravityEnabled, "antigravity", value);
+    }
+
+    public bool IsClaudeEnabled
+    {
+        get => _isClaudeEnabled;
+        set => SetProviderEnabled(ref _isClaudeEnabled, "claude", value);
+    }
+
+    public bool IsCodexEnabled
+    {
+        get => _isCodexEnabled;
+        set => SetProviderEnabled(ref _isCodexEnabled, "codex", value);
+    }
+
+    public bool IsCopilotEnabled
+    {
+        get => _isCopilotEnabled;
+        set => SetProviderEnabled(ref _isCopilotEnabled, "github-copilot", value);
+    }
+
+    public bool IsGeminiEnabled
+    {
+        get => _isGeminiEnabled;
+        set => SetProviderEnabled(ref _isGeminiEnabled, "gemini", value);
+    }
+
+    public bool IsQwenEnabled
+    {
+        get => _isQwenEnabled;
+        set => SetProviderEnabled(ref _isQwenEnabled, "qwen", value);
+    }
+
+    public bool IsZaiEnabled
+    {
+        get => _isZaiEnabled;
+        set => SetProviderEnabled(ref _isZaiEnabled, "zai", value);
+    }
+
     public AuthAccount? AccountToRemove
     {
         get => _accountToRemove;
@@ -141,6 +218,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public ObservableCollection<AuthAccount> CopilotAccounts { get; } = [];
     public ObservableCollection<AuthAccount> GeminiAccounts { get; } = [];
     public ObservableCollection<AuthAccount> QwenAccounts { get; } = [];
+    public ObservableCollection<AuthAccount> ZaiAccounts { get; } = [];
 
     public bool IsAuthenticatingAntigravity => GetBusy(AuthProviderType.Antigravity);
     public bool IsAuthenticatingClaude => GetBusy(AuthProviderType.Claude);
@@ -158,6 +236,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public ICommand ConnectCopilotCommand { get; }
     public ICommand ConnectGeminiCommand { get; }
     public ICommand ConnectQwenCommand { get; }
+    public ICommand SaveZaiApiKeyCommand { get; }
     public ICommand OpenAuthFolderCommand { get; }
     public ICommand ToggleLaunchCommand { get; }
 
@@ -184,7 +263,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            UpdateServerStatusText();
+            PostToUi(UpdateServerStatusText);
         }
     }
 
@@ -192,7 +271,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     {
         await _cliProxyService.StopAsync().ConfigureAwait(false);
         await _thinkingProxyServer.StopAsync().ConfigureAwait(false);
-        UpdateServerStatusText();
+        PostToUi(UpdateServerStatusText);
     }
 
     public async Task CopyServerUrlAsync()
@@ -234,10 +313,31 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         await Task.CompletedTask;
     }
 
+    private async Task SaveZaiApiKeyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ZaiApiKey))
+        {
+            _notificationService.Show("Missing API Key", "Please enter a Z.AI API key.");
+            return;
+        }
+
+        if (_providerConfigService.SaveZaiApiKey(ZaiApiKey.Trim(), out var message))
+        {
+            ZaiApiKey = string.Empty;
+            _notificationService.Show("Z.AI API Key Saved", message);
+            await _authStatusService.RefreshAsync().ConfigureAwait(false);
+        }
+        else
+        {
+            _notificationService.Show("Z.AI API Key Failed", message);
+        }
+    }
+
     private async Task InitializeAsync()
     {
         var launch = await _launchAtLoginService.IsEnabledAsync().ConfigureAwait(false);
         UpdateLaunchAtLoginFlag(launch);
+        LoadProviderSettings();
         await _authStatusService.RefreshAsync().ConfigureAwait(false);
         UpdateAccounts(_authStatusService.CurrentAccounts);
         UpdateServerStatusText();
@@ -285,6 +385,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         UpdateAccountCollection(CopilotAccounts, snapshot.GetValueOrDefault(AuthProviderType.Copilot) ?? []);
         UpdateAccountCollection(GeminiAccounts, snapshot.GetValueOrDefault(AuthProviderType.Gemini) ?? []);
         UpdateAccountCollection(QwenAccounts, snapshot.GetValueOrDefault(AuthProviderType.Qwen) ?? []);
+        UpdateAccountCollection(ZaiAccounts, snapshot.GetValueOrDefault(AuthProviderType.Zai) ?? []);
 
         StatusItems.Clear();
         StatusItems.Add(new StatusItem("Antigravity", FormatAccountStatus(AntigravityAccounts)));
@@ -293,6 +394,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         StatusItems.Add(new StatusItem("GitHub Copilot", FormatAccountStatus(CopilotAccounts)));
         StatusItems.Add(new StatusItem("Gemini", FormatAccountStatus(GeminiAccounts)));
         StatusItems.Add(new StatusItem("Qwen", FormatAccountStatus(QwenAccounts)));
+        StatusItems.Add(new StatusItem("Z.AI GLM", FormatAccountStatus(ZaiAccounts)));
     }
 
     private static void UpdateAccountCollection(ObservableCollection<AuthAccount> collection, IReadOnlyList<AuthAccount> accounts)
@@ -351,7 +453,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     {
         await _launchAtLoginService.SetEnabledAsync(LaunchAtLoginEnabled).ConfigureAwait(false);
         var launch = await _launchAtLoginService.IsEnabledAsync().ConfigureAwait(false);
-        UpdateLaunchAtLoginFlag(launch);
+        PostToUi(() => UpdateLaunchAtLoginFlag(launch));
     }
 
     private void UpdateLaunchAtLoginFlag(bool enabled)
@@ -359,11 +461,32 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         LaunchAtLoginEnabled = enabled;
     }
 
+    private void LoadProviderSettings()
+    {
+        _suppressProviderUpdates = true;
+        IsAntigravityEnabled = _providerConfigService.IsProviderEnabled("antigravity");
+        IsClaudeEnabled = _providerConfigService.IsProviderEnabled("claude");
+        IsCodexEnabled = _providerConfigService.IsProviderEnabled("codex");
+        IsCopilotEnabled = _providerConfigService.IsProviderEnabled("github-copilot");
+        IsGeminiEnabled = _providerConfigService.IsProviderEnabled("gemini");
+        IsQwenEnabled = _providerConfigService.IsProviderEnabled("qwen");
+        IsZaiEnabled = _providerConfigService.IsProviderEnabled("zai");
+        _suppressProviderUpdates = false;
+    }
+
     private void UpdateServerStatusText()
     {
         ServerStatusText = IsServerRunning
             ? $"Server: Running (port {_thinkingProxyServer.ListeningPort})"
             : "Server: Stopped";
+    }
+
+    private void SetProviderEnabled(ref bool field, string providerKey, bool value)
+    {
+        if (SetProperty(ref field, value) && !_suppressProviderUpdates)
+        {
+            _providerConfigService.SetProviderEnabled(providerKey, value);
+        }
     }
 
     private bool GetBusy(AuthProviderType provider)
@@ -381,12 +504,33 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             _authBusy[provider] = busy;
         }
 
-        RaisePropertyChanged(nameof(IsAuthenticatingAntigravity));
-        RaisePropertyChanged(nameof(IsAuthenticatingClaude));
-        RaisePropertyChanged(nameof(IsAuthenticatingCodex));
-        RaisePropertyChanged(nameof(IsAuthenticatingCopilot));
-        RaisePropertyChanged(nameof(IsAuthenticatingGemini));
-        RaisePropertyChanged(nameof(IsAuthenticatingQwen));
+        PostToUi(() =>
+        {
+            RaisePropertyChanged(nameof(IsAuthenticatingAntigravity));
+            RaisePropertyChanged(nameof(IsAuthenticatingClaude));
+            RaisePropertyChanged(nameof(IsAuthenticatingCodex));
+            RaisePropertyChanged(nameof(IsAuthenticatingCopilot));
+            RaisePropertyChanged(nameof(IsAuthenticatingGemini));
+            RaisePropertyChanged(nameof(IsAuthenticatingQwen));
+        });
+    }
+
+    private static ProviderConfigService CreateProviderConfigService()
+    {
+        var bundledConfigPath = Path.Combine(AppContext.BaseDirectory, "Resources", "config.yaml");
+        return new ProviderConfigService(bundledConfigPath);
+    }
+
+    private static void PostToUi(Action action)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            action();
+        }
+        else
+        {
+            Dispatcher.UIThread.Post(action);
+        }
     }
 
     public void Dispose()
