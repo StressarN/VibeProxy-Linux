@@ -5,82 +5,355 @@
         xmlns:vm="clr-namespace:VibeProxy.Linux.ViewModels"
         xmlns:conv="clr-namespace:VibeProxy.Linux.Utilities"
         x:Class="VibeProxy.Linux.MainWindow"
-        Width="720" Height="760"
+        Width="860"
+        Height="900"
+        MinWidth="760"
+        MinHeight="820"
         Title="VibeProxy Linux"
+        Background="Transparent"
+        SystemDecorations="None"
+        CanResize="False"
         mc:Ignorable="d">
   <Window.DataContext>
     <vm:SettingsViewModel />
   </Window.DataContext>
 
-  <Grid RowDefinitions="Auto,*" ColumnDefinitions="*">
-    <StackPanel Orientation="Horizontal" Spacing="8" Margin="12">
-      <Button Content="Start" Command="{Binding StartCommand}" Width="100" />
-      <Button Content="Stop" Command="{Binding StopCommand}" Width="100" />
-      <ToggleSwitch Content="Launch at Login" IsChecked="{Binding LaunchAtLoginEnabled, Mode=TwoWay}" />
-      <TextBlock Text="{Binding ServerStatusText}" Margin="12,0,0,0" VerticalAlignment="Center" />
-    </StackPanel>
+  <Window.Resources>
+    <SolidColorBrush x:Key="BgDeepBrush" Color="#090B10" />
+    <SolidColorBrush x:Key="BgBaseBrush" Color="#0F1117" />
+    <SolidColorBrush x:Key="BgSurfaceBrush" Color="#141822" />
+    <SolidColorBrush x:Key="BgCardBrush" Color="#191D27" />
+    <SolidColorBrush x:Key="BorderBrush" Color="#2A3040" />
+    <SolidColorBrush x:Key="BorderStrongBrush" Color="#3A4154" />
+    <SolidColorBrush x:Key="AccentBrush" Color="#E8A642" />
+    <SolidColorBrush x:Key="AccentMutedBrush" Color="#C68B34" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F4F1EA" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#A0A6BA" />
+    <SolidColorBrush x:Key="TextDimBrush" Color="#6A7186" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="#1C6B4A" />
+    <SolidColorBrush x:Key="SuccessBorderBrush" Color="#2A8A61" />
+    <SolidColorBrush x:Key="DangerBrush" Color="#412027" />
+    <SolidColorBrush x:Key="DangerBorderBrush" Color="#7D3946" />
+    <SolidColorBrush x:Key="OfflineBrush" Color="#202534" />
+    <SolidColorBrush x:Key="OfflineBorderBrush" Color="#394055" />
+  </Window.Resources>
 
-    <Grid Grid.Row="1" ColumnDefinitions="2*,2*" RowDefinitions="Auto,*,Auto">
-      <StackPanel Grid.Column="0" Margin="12" Spacing="8">
-        <TextBlock Text="Authentication" FontWeight="SemiBold" />
-        <StackPanel Spacing="4">
-          <Button Content="Add Antigravity Account" Command="{Binding ConnectAntigravityCommand}" IsEnabled="{Binding IsAuthenticatingAntigravity, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
-          <Button Content="Add Claude Code Account" Command="{Binding ConnectClaudeCommand}" IsEnabled="{Binding IsAuthenticatingClaude, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
-          <Button Content="Add Codex Account" Command="{Binding ConnectCodexCommand}" IsEnabled="{Binding IsAuthenticatingCodex, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
-          <Button Content="Add GitHub Copilot Account" Command="{Binding ConnectCopilotCommand}" IsEnabled="{Binding IsAuthenticatingCopilot, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
-          <Button Content="Add Gemini Account" Command="{Binding ConnectGeminiCommand}" IsEnabled="{Binding IsAuthenticatingGemini, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <TextBox Width="180" Watermark="Qwen Email" Text="{Binding QwenEmail, Mode=TwoWay}" />
-            <Button Content="Add Qwen" Command="{Binding ConnectQwenCommand}" IsEnabled="{Binding IsAuthenticatingQwen, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
+  <Window.Styles>
+    <Style Selector="Window">
+      <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+    </Style>
+
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{StaticResource BgCardBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Padding" Value="18" />
+    </Style>
+
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+      <Setter Property="Foreground" Value="#0A0C10" />
+      <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="18,10" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <Style Selector="Button.primary:pointerover">
+      <Setter Property="Background" Value="#F0B050" />
+      <Setter Property="BorderBrush" Value="#F0B050" />
+    </Style>
+
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="14,8" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <Style Selector="Button.ghost:pointerover">
+      <Setter Property="Background" Value="{StaticResource BgSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
+    </Style>
+
+    <Style Selector="Button.chrome">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Width" Value="34" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+
+    <Style Selector="Button.chrome:pointerover">
+      <Setter Property="Background" Value="{StaticResource BgCardBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+    </Style>
+
+    <Style Selector="Button.chrome.danger:pointerover">
+      <Setter Property="Background" Value="{StaticResource DangerBrush}" />
+      <Setter Property="Foreground" Value="#FFD8DE" />
+    </Style>
+
+    <Style Selector="TextBlock.section">
+      <Setter Property="Foreground" Value="{StaticResource TextDimBrush}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="LetterSpacing" Value="2" />
+    </Style>
+
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+    </Style>
+
+    <Style Selector="TextBox.input">
+      <Setter Property="Background" Value="{StaticResource BgSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="12,10" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <Style Selector="ToggleSwitch">
+      <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+    </Style>
+
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+    </Style>
+  </Window.Styles>
+
+  <Border Margin="14"
+          Background="{StaticResource BgBaseBrush}"
+          BorderBrush="{StaticResource BorderBrush}"
+          BorderThickness="1"
+          CornerRadius="18"
+          BoxShadow="0 28 56 0 #66000000">
+    <Grid RowDefinitions="48,*">
+      <Border Grid.Row="0"
+              Background="{StaticResource BgSurfaceBrush}"
+              CornerRadius="18,18,0,0"
+              PointerPressed="OnTitleBarPointerPressed">
+        <Grid Margin="18,0,10,0" ColumnDefinitions="*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <Border Width="10"
+                    Height="10"
+                    CornerRadius="999"
+                    Background="{StaticResource AccentBrush}" />
+            <TextBlock Text="VibeProxy Linux" FontWeight="Bold" />
+            <TextBlock Text="{Binding VersionText}" Classes="muted" FontSize="11" />
           </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <TextBox Width="180" Watermark="Z.AI API Key" Text="{Binding ZaiApiKey, Mode=TwoWay}" />
-            <Button Content="Add Z.AI Key" Command="{Binding SaveZaiApiKeyCommand}" />
+
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Button Content="-" Classes="chrome" Click="OnMinimize" />
+            <Button Content="x" Classes="chrome danger" Click="OnCloseWindow" />
           </StackPanel>
-          <Button Content="Open Auth Folder" Command="{Binding OpenAuthFolderCommand}" Margin="0,8,0,0" />
-        </StackPanel>
+        </Grid>
+      </Border>
 
-        <TextBlock Text="Provider Priority" FontWeight="SemiBold" Margin="0,12,0,0" />
-        <StackPanel Spacing="4">
-          <ToggleSwitch Content="Antigravity" IsChecked="{Binding IsAntigravityEnabled, Mode=TwoWay}" />
-          <ToggleSwitch Content="Claude Code" IsChecked="{Binding IsClaudeEnabled, Mode=TwoWay}" />
-          <ToggleSwitch Content="Codex" IsChecked="{Binding IsCodexEnabled, Mode=TwoWay}" />
-          <ToggleSwitch Content="GitHub Copilot" IsChecked="{Binding IsCopilotEnabled, Mode=TwoWay}" />
-          <ToggleSwitch Content="Gemini" IsChecked="{Binding IsGeminiEnabled, Mode=TwoWay}" />
-          <ToggleSwitch Content="Qwen" IsChecked="{Binding IsQwenEnabled, Mode=TwoWay}" />
-          <ToggleSwitch Content="Z.AI GLM" IsChecked="{Binding IsZaiEnabled, Mode=TwoWay}" />
-        </StackPanel>
-      </StackPanel>
-
-      <StackPanel Grid.Column="1" Margin="12" Spacing="8">
-        <TextBlock Text="Connected Accounts" FontWeight="SemiBold" />
-        <ItemsControl ItemsSource="{Binding StatusItems}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
-                <TextBlock Text="{Binding Name}" Width="110" FontWeight="Medium" />
-                <TextBlock Text="{Binding Status}" />
+      <ScrollViewer Grid.Row="1"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="24,20,24,24" Spacing="18">
+          <Border Classes="card">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+              <StackPanel Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="SERVER" Classes="section" VerticalAlignment="Center" />
+                  <Border IsVisible="{Binding IsServerRunning}"
+                          Background="{StaticResource SuccessBrush}"
+                          BorderBrush="{StaticResource SuccessBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="999"
+                          Padding="10,4">
+                    <TextBlock Text="{Binding ServerStateLabel}" FontWeight="SemiBold" FontSize="11" />
+                  </Border>
+                  <Border IsVisible="{Binding IsServerRunning, Converter={x:Static conv:BooleanNegationConverter.Instance}}"
+                          Background="{StaticResource DangerBrush}"
+                          BorderBrush="{StaticResource DangerBorderBrush}"
+                          BorderThickness="1"
+                          CornerRadius="999"
+                          Padding="10,4">
+                    <TextBlock Text="{Binding ServerStateLabel}" FontWeight="SemiBold" FontSize="11" />
+                  </Border>
+                </StackPanel>
+                <TextBlock Text="{Binding ServerStatusText}" FontSize="15" />
+                <TextBlock Text="The thinking proxy listens on port 8317 and forwards into the bundled CLI proxy."
+                           Classes="muted"
+                           TextWrapping="Wrap" />
               </StackPanel>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <TextBlock Text="Multiple accounts per provider supported" FontSize="11" Foreground="Gray" Margin="0,4,0,0" />
-        <TextBlock Text="Round-robin with auto-failover on rate limits" FontSize="11" Foreground="Gray" />
-      </StackPanel>
 
-      <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="12" Spacing="6">
-        <TextBlock Text="Logs" FontWeight="SemiBold" />
-        <Border Height="200" BorderBrush="Gray" BorderThickness="1">
-          <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding LogLines}" />
-          </ScrollViewer>
-        </Border>
-      </StackPanel>
+              <Button Grid.Column="1"
+                      Content="{Binding ServerActionText}"
+                      Command="{Binding ToggleServerCommand}"
+                      Classes="primary"
+                      MinWidth="132"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Center" />
 
-      <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="12" Spacing="10">
-        <Button Content="Copy URL" Command="{Binding CopyUrlCommand}" />
-        <TextBlock Text="{Binding VersionText}" VerticalAlignment="Center" />
-      </StackPanel>
+              <WrapPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,18,0,0" Orientation="Horizontal">
+                <CheckBox Content="Launch at login"
+                          IsChecked="{Binding LaunchAtLoginEnabled, Mode=TwoWay}"
+                          Margin="0,0,18,0" />
+                <Button Content="Copy URL" Command="{Binding CopyUrlCommand}" Classes="ghost" Margin="0,0,10,0" />
+                <Button Content="Auth Folder" Command="{Binding OpenAuthFolderCommand}" Classes="ghost" />
+              </WrapPanel>
+            </Grid>
+          </Border>
+
+          <TextBlock Text="SERVICES" Classes="section" Margin="4,2,0,0" />
+          <ItemsControl ItemsSource="{Binding ServiceCards}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="card" Margin="0,0,0,10" Padding="16">
+                  <Grid ColumnDefinitions="Auto,16,*,16,Auto">
+                    <Border Width="44"
+                            Height="44"
+                            CornerRadius="12"
+                            Background="{StaticResource BgSurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            VerticalAlignment="Center">
+                      <TextBlock Text="{Binding BadgeText}"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 FontWeight="Bold"
+                                 Foreground="{StaticResource AccentBrush}" />
+                    </Border>
+
+                    <StackPanel Grid.Column="2" Spacing="4" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" />
+                      <TextBlock Text="{Binding StatusText}" Classes="muted" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                      <Border IsVisible="{Binding IsConnected}"
+                              Background="{StaticResource SuccessBrush}"
+                              BorderBrush="{StaticResource SuccessBorderBrush}"
+                              BorderThickness="1"
+                              CornerRadius="999"
+                              Padding="10,4">
+                        <TextBlock Text="{Binding StatusChipText}" FontSize="11" FontWeight="SemiBold" />
+                      </Border>
+                      <Border IsVisible="{Binding IsConnected, Converter={x:Static conv:BooleanNegationConverter.Instance}}"
+                              Background="{StaticResource OfflineBrush}"
+                              BorderBrush="{StaticResource OfflineBorderBrush}"
+                              BorderThickness="1"
+                              CornerRadius="999"
+                              Padding="10,4">
+                        <TextBlock Text="{Binding StatusChipText}" FontSize="11" FontWeight="SemiBold" />
+                      </Border>
+
+                      <ProgressBar IsVisible="{Binding IsBusy}"
+                                   IsIndeterminate="True"
+                                   Width="70"
+                                   Height="6"
+                                   VerticalAlignment="Center" />
+
+                      <Button Content="Connect"
+                              Command="{Binding ConnectCommand}"
+                              Classes="ghost"
+                              IsVisible="{Binding IsConnected, Converter={x:Static conv:BooleanNegationConverter.Instance}}" />
+                      <Button Content="Disconnect"
+                              Command="{Binding DisconnectCommand}"
+                              Classes="ghost"
+                              IsVisible="{Binding IsConnected}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border Classes="card">
+            <StackPanel Spacing="16">
+              <TextBlock Text="CREDENTIAL INPUTS" Classes="section" />
+
+              <Grid ColumnDefinitions="*,12,Auto">
+                <TextBox Classes="input"
+                         Watermark="Qwen account email"
+                         Text="{Binding QwenEmail, Mode=TwoWay}" />
+                <Button Grid.Column="2"
+                        Content="Connect Qwen"
+                        Command="{Binding ConnectQwenCommand}"
+                        Classes="primary" />
+              </Grid>
+
+              <Grid ColumnDefinitions="*,12,Auto">
+                <TextBox Classes="input"
+                         Watermark="Z.AI API key"
+                         Text="{Binding ZaiApiKey, Mode=TwoWay}" />
+                <Button Grid.Column="2"
+                        Content="Save Z.AI Key"
+                        Command="{Binding SaveZaiApiKeyCommand}"
+                        Classes="ghost" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card">
+            <StackPanel Spacing="14">
+              <TextBlock Text="PROVIDER PRIORITY" Classes="section" />
+              <Grid ColumnDefinitions="*,24,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                <ToggleSwitch Content="Antigravity" IsChecked="{Binding IsAntigravityEnabled, Mode=TwoWay}" />
+                <ToggleSwitch Grid.Column="2" Content="Claude Code" IsChecked="{Binding IsClaudeEnabled, Mode=TwoWay}" />
+                <ToggleSwitch Grid.Row="1" Content="Codex" IsChecked="{Binding IsCodexEnabled, Mode=TwoWay}" />
+                <ToggleSwitch Grid.Row="1" Grid.Column="2" Content="GitHub Copilot" IsChecked="{Binding IsCopilotEnabled, Mode=TwoWay}" />
+                <ToggleSwitch Grid.Row="2" Content="Gemini" IsChecked="{Binding IsGeminiEnabled, Mode=TwoWay}" />
+                <ToggleSwitch Grid.Row="2" Grid.Column="2" Content="Qwen" IsChecked="{Binding IsQwenEnabled, Mode=TwoWay}" />
+                <ToggleSwitch Grid.Row="3" Content="Z.AI GLM" IsChecked="{Binding IsZaiEnabled, Mode=TwoWay}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card">
+            <StackPanel Spacing="14">
+              <TextBlock Text="CONNECTED ACCOUNTS" Classes="section" />
+              <ItemsControl ItemsSource="{Binding StatusItems}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Grid.Column="1" Text="{Binding Status}" Classes="muted" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Text="Multiple accounts per provider are supported, with failover handled by the CLI proxy."
+                         Classes="muted"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card">
+            <StackPanel Spacing="12">
+              <TextBlock Text="LOGS" Classes="section" />
+              <ListBox ItemsSource="{Binding LogLines}"
+                       Height="190"
+                       Background="{StaticResource BgSurfaceBrush}"
+                       BorderBrush="{StaticResource BorderBrush}"
+                       BorderThickness="1"
+                       Padding="6"
+                       FontFamily="Monospace"
+                       FontSize="12">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding .}" TextWrapping="Wrap" />
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
     </Grid>
-  </Grid>
+  </Border>
 </Window>

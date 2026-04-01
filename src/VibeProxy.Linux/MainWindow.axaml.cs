@@ -1,5 +1,7 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using VibeProxy.Linux.Services;
 using VibeProxy.Linux.ViewModels;
@@ -26,6 +28,24 @@ public sealed partial class MainWindow : Window
     {
         base.OnClosed(e);
         _viewModel.Dispose();
+    }
+
+    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            BeginMoveDrag(e);
+        }
+    }
+
+    private void OnMinimize(object? sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void OnCloseWindow(object? sender, RoutedEventArgs e)
+    {
+        Close();
     }
 
     private void InitializeComponent()

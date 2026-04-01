@@ -44,4 +44,43 @@ public class ThinkingModelTransformerTests
         Assert.False(modified);
         Assert.Equal(payload, body);
     }
+
+    [Fact]
+    public void NormalizesGptFastModelAndAddsPriorityServiceTier()
+    {
+        var payload = "{\"model\":\"gpt-5-fast\",\"messages\":[]}";
+
+        var (body, modified) = ThinkingModelTransformer.Apply(payload);
+
+        Assert.True(modified);
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("gpt-5", doc.RootElement.GetProperty("model").GetString());
+        Assert.Equal("priority", doc.RootElement.GetProperty("service_tier").GetString());
+    }
+
+    [Fact]
+    public void NormalizesGptFastReasoningSuffix()
+    {
+        var payload = "{\"model\":\"gpt-5.2-high-fast\"}";
+
+        var (body, modified) = ThinkingModelTransformer.Apply(payload);
+
+        Assert.True(modified);
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("gpt-5.2(high)", doc.RootElement.GetProperty("model").GetString());
+        Assert.Equal("priority", doc.RootElement.GetProperty("service_tier").GetString());
+    }
+
+    [Fact]
+    public void PreservesExplicitServiceTierForFastMode()
+    {
+        var payload = "{\"model\":\"gpt-5-codex-low-fast\",\"service_tier\":\"default\"}";
+
+        var (body, modified) = ThinkingModelTransformer.Apply(payload);
+
+        Assert.True(modified);
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("gpt-5-codex(low)", doc.RootElement.GetProperty("model").GetString());
+        Assert.Equal("default", doc.RootElement.GetProperty("service_tier").GetString());
+    }
 }

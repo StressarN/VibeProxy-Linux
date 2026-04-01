@@ -315,7 +315,7 @@ public sealed class CliProxyService : IDisposable
 
         if (string.IsNullOrWhiteSpace(downloadUrl))
         {
-            throw new InvalidOperationException("Unable to locate Linux x64 CLIProxyAPI asset.");
+            throw new InvalidOperationException("Unable to locate Linux x64 CLIProxyAPIPlus asset.");
         }
 
         var tempZip = Path.GetTempFileName();

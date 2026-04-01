@@ -2,7 +2,7 @@
 
 <p align="center">
 <a href="https://github.com/StressarN" rel="nofollow"><img alt="StressarN" src="https://img.shields.io/badge/By-StressarN-4b3baf" style="max-width: 100%;"></a>
-<a href="https://github.com/automazeio/vibeproxy/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745" style="max-width: 100%;"></a>
+<a href="https://github.com/StressarN/VibeProxy-Linux/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745" style="max-width: 100%;"></a>
 <a href="http://x.com/intent/follow?screen_name=StressarN" rel="nofollow"><img alt="Follow on 𝕏" src="https://img.shields.io/badge/Follow-%F0%9D%95%8F/@StressarN-1c9bf0" style="max-width: 100%;"></a>
 <a href="https://github.com/StressarN/VibeProxy-Linux"><img alt="Star this repo" src="https://img.shields.io/github/stars/StressarN/VibeProxy-Linux.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
 </p>
@@ -12,7 +12,7 @@
 
 **Stop paying twice for AI.** VibeProxy is a native Linux desktop application that lets you use your existing Claude Code, ChatGPT, **Gemini**, and **Qwen** subscriptions with powerful AI coding tools like **[Factory Droids](https://app.factory.ai/r/FM8BJHFQ)** – no separate API keys required.
 
-Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles OAuth authentication, token management, and API routing automatically. One click to authenticate, zero friction to code.
+Built on [CLIProxyAPIPlus](https://github.com/router-for-me/CLIProxyAPIPlus), it handles OAuth authentication, token management, and API routing automatically. One click to authenticate, zero friction to code.
 
 > [!IMPORTANT]
 > **Gemini and Qwen Support! 🎉** VibeProxy supports Google's Gemini AI and Qwen AI with full OAuth authentication. Connect your accounts and use Gemini and Qwen with your favorite AI coding tools!
@@ -46,7 +46,7 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
 
 ### Download Pre-built Release (Recommended)
 
-1. Go to the [**Releases**](https://github.com/automazeio/vibeproxy/releases) page
+1. Go to the [**Releases**](https://github.com/StressarN/VibeProxy-Linux/releases) page
 2. Download the latest Linux release package
 3. Extract and run the application
 4. Launch VibeProxy
@@ -54,6 +54,12 @@ Built on [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), it handles
 ### Build from Source
 
 Want to build it yourself? See [**INSTALLATION.md**](INSTALLATION.md) for detailed build instructions.
+
+### Release Automation
+
+- Every pushed commit triggers the GitHub Actions Linux build workflow.
+- Branch pushes upload snapshot artifacts named with the version, branch, and commit SHA.
+- Pushing a tag like `v0.5.0` publishes a GitHub Release with the packaged ZIP and checksum file.
 
 ## Usage
 
@@ -96,7 +102,7 @@ VibeProxy/
 │       ├── MainWindow.axaml              # Main UI window
 │       ├── MainWindow.axaml.cs           # Main window logic
 │       ├── Services/
-│       │   ├── CliProxyService.cs        # CLIProxyAPI process control
+│       │   ├── CliProxyService.cs        # CLIProxyAPIPlus process control
 │       │   ├── AuthStatusService.cs      # Auth file monitoring
 │       │   ├── TrayService.cs            # System tray integration
 │       │   ├── NotificationService.cs    # Desktop notifications
@@ -115,8 +121,8 @@ VibeProxy/
 │       │   ├── RingBuffer.cs             # Circular buffer for logs
 │       │   └── BooleanNegationConverter.cs # UI converter
 │       └── Resources/
-│           ├── cli-proxy-api             # CLIProxyAPI binary
-│           ├── config.yaml               # CLIProxyAPI config
+│           ├── cli-proxy-api             # CLIProxyAPIPlus binary
+│           ├── config.yaml               # CLIProxyAPIPlus config
 │           ├── icon-active.png           # Tray icon (active)
 │           ├── icon-inactive.png         # Tray icon (inactive)
 │           ├── icon-claude.png           # Claude Code service icon
@@ -155,10 +161,10 @@ make test
 
 ## Credits
 
-VibeProxy is built on top of [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), an excellent unified proxy server for AI services.
+VibeProxy is built on top of [CLIProxyAPIPlus](https://github.com/router-for-me/CLIProxyAPIPlus), an excellent unified proxy server for AI services.
 
 Special thanks to:
-- The CLIProxyAPI project for providing the core functionality that makes VibeProxy possible
+- The CLIProxyAPIPlus project for providing the core functionality that makes VibeProxy possible
 - **[Automaze, Ltd.](https://automaze.io)** for the original VibeProxy concept and implementation - this Linux version builds upon their excellent foundation
 
 ## License
@@ -167,7 +173,7 @@ MIT License - see LICENSE file for details
 
 ## Support
 
-- **Report Issues**: [GitHub Issues](https://github.com/automazeio/vibeproxy/issues)
+- **Report Issues**: [GitHub Issues](https://github.com/StressarN/VibeProxy-Linux/issues)
 
 ---
 

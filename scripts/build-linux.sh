@@ -8,7 +8,17 @@ SOLUTION="$ROOT_DIR/VibeProxy.Linux.sln"
 PROJECT="$ROOT_DIR/src/VibeProxy.Linux/VibeProxy.Linux.csproj"
 OUT_DIR="$ROOT_DIR/out"
 PUBLISH_DIR="$OUT_DIR/publish"
-ZIP_PATH="$OUT_DIR/VibeProxy-Linux-${CONFIGURATION}.zip"
+VERSION_LABEL="${APP_VERSION:-}"
+
+if [ -z "$VERSION_LABEL" ] && [ -f "$ROOT_DIR/VERSION" ]; then
+  VERSION_LABEL="$(tr -d '\r\n' < "$ROOT_DIR/VERSION")"
+fi
+
+if [ -z "$VERSION_LABEL" ]; then
+  VERSION_LABEL="$CONFIGURATION"
+fi
+
+ZIP_PATH="$OUT_DIR/VibeProxy-Linux-${VERSION_LABEL}.zip"
 
 if ! command -v dotnet >/dev/null 2>&1; then
   echo "❌ dotnet SDK not found. Install dotnet-sdk (e.g., 'sudo pacman -S dotnet-sdk') and retry." >&2

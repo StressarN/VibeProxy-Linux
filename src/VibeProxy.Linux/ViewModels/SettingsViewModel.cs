@@ -26,6 +26,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private readonly LaunchAtLoginService _launchAtLoginService;
     private readonly NotificationService _notificationService;
     private readonly Dictionary<AuthProviderType, bool> _authBusy = new();
+    private readonly Dictionary<AuthProviderType, ServiceCardViewModel> _serviceCards;
     private bool _launchAtLoginEnabled;
     private bool _thinkingProxyRunning;
     private string _serverStatusText = "Server: Stopped";
@@ -74,6 +75,16 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         _notificationService = notificationService;
 
         LogLines = new ObservableCollection<string>(_cliProxyService.GetLogs());
+        ServiceCards = new ObservableCollection<ServiceCardViewModel>(new[]
+        {
+            CreateServiceCard(AuthProviderType.Antigravity, "Antigravity", "AG"),
+            CreateServiceCard(AuthProviderType.Claude, "Claude Code", "CL"),
+            CreateServiceCard(AuthProviderType.Codex, "Codex", "CX"),
+            CreateServiceCard(AuthProviderType.Copilot, "GitHub Copilot", "GH"),
+            CreateServiceCard(AuthProviderType.Gemini, "Gemini", "GM"),
+            CreateServiceCard(AuthProviderType.Qwen, "Qwen", "QW")
+        });
+        _serviceCards = ServiceCards.ToDictionary(card => card.Provider);
         StatusItems = new ObservableCollection<StatusItem>();
 
         _cliProxyService.StatusChanged += (_, _) =>
@@ -81,6 +92,8 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             PostToUi(() =>
             {
                 RaisePropertyChanged(nameof(IsServerRunning));
+                RaisePropertyChanged(nameof(ServerStateLabel));
+                RaisePropertyChanged(nameof(ServerActionText));
                 UpdateServerStatusText();
             });
         };
@@ -102,6 +115,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             {
                 _thinkingProxyRunning = running;
                 RaisePropertyChanged(nameof(IsThinkingProxyRunning));
+                RaisePropertyChanged(nameof(ServerActionText));
                 UpdateServerStatusText();
             });
         };
@@ -110,13 +124,14 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
         StartCommand = new AsyncCommand(StartServerAsync);
         StopCommand = new AsyncCommand(StopServerAsync);
+        ToggleServerCommand = new AsyncCommand(ToggleServerAsync);
         CopyUrlCommand = new AsyncCommand(CopyServerUrlAsync);
-        ConnectAntigravityCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Antigravity, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Antigravity, null)));
-        ConnectClaudeCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Claude, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Claude, null)));
-        ConnectCodexCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Codex, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Codex, null)));
-        ConnectCopilotCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Copilot, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Copilot, null)));
-        ConnectGeminiCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Gemini, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Gemini, null)));
-        ConnectQwenCommand = new AsyncCommand(() => RunAuthFlowAsync(AuthProviderType.Qwen, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Qwen, QwenEmail)));
+        ConnectAntigravityCommand = new AsyncCommand(() => ConnectProviderAsync(AuthProviderType.Antigravity));
+        ConnectClaudeCommand = new AsyncCommand(() => ConnectProviderAsync(AuthProviderType.Claude));
+        ConnectCodexCommand = new AsyncCommand(() => ConnectProviderAsync(AuthProviderType.Codex));
+        ConnectCopilotCommand = new AsyncCommand(() => ConnectProviderAsync(AuthProviderType.Copilot));
+        ConnectGeminiCommand = new AsyncCommand(() => ConnectProviderAsync(AuthProviderType.Gemini));
+        ConnectQwenCommand = new AsyncCommand(() => ConnectProviderAsync(AuthProviderType.Qwen));
         SaveZaiApiKeyCommand = new AsyncCommand(SaveZaiApiKeyAsync);
         OpenAuthFolderCommand = new AsyncCommand(OpenAuthFolderAsync);
         ToggleLaunchCommand = new AsyncCommand(UpdateLaunchAtLoginAsync);
@@ -125,6 +140,8 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     }
 
     public ObservableCollection<string> LogLines { get; }
+
+    public ObservableCollection<ServiceCardViewModel> ServiceCards { get; }
 
     public ObservableCollection<StatusItem> StatusItems { get; }
 
@@ -149,6 +166,10 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         get => _serverStatusText;
         private set => SetProperty(ref _serverStatusText, value);
     }
+
+    public string ServerStateLabel => IsServerRunning ? "Running" : "Stopped";
+
+    public string ServerActionText => IsServerRunning ? "Stop Server" : "Start Server";
 
     public string VersionText => $"VibeProxy {Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0"}";
 
@@ -229,6 +250,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     public ICommand StartCommand { get; }
     public ICommand StopCommand { get; }
+    public ICommand ToggleServerCommand { get; }
     public ICommand CopyUrlCommand { get; }
     public ICommand ConnectAntigravityCommand { get; }
     public ICommand ConnectClaudeCommand { get; }
@@ -266,6 +288,8 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             PostToUi(UpdateServerStatusText);
         }
     }
+
+    public Task ToggleServerAsync() => IsServerRunning ? StopServerAsync() : StartServerAsync();
 
     public async Task StopServerAsync()
     {
@@ -377,6 +401,58 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         }
     }
 
+    public Task ConnectProviderAsync(AuthProviderType provider) => provider switch
+    {
+        AuthProviderType.Antigravity => RunAuthFlowAsync(AuthProviderType.Antigravity, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Antigravity, null)),
+        AuthProviderType.Claude => RunAuthFlowAsync(AuthProviderType.Claude, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Claude, null)),
+        AuthProviderType.Codex => RunAuthFlowAsync(AuthProviderType.Codex, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Codex, null)),
+        AuthProviderType.Copilot => RunAuthFlowAsync(AuthProviderType.Copilot, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Copilot, null)),
+        AuthProviderType.Gemini => RunAuthFlowAsync(AuthProviderType.Gemini, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Gemini, null)),
+        AuthProviderType.Qwen when string.IsNullOrWhiteSpace(QwenEmail) => NotifyMissingQwenEmailAsync(),
+        AuthProviderType.Qwen => RunAuthFlowAsync(AuthProviderType.Qwen, () => _cliProxyService.RunAuthCommandAsync(AuthCommand.Qwen, QwenEmail)),
+        _ => Task.CompletedTask
+    };
+
+    public async Task DisconnectProviderAsync(AuthProviderType provider)
+    {
+        if (GetBusy(provider))
+        {
+            return;
+        }
+
+        SetBusy(provider, true);
+        var wasRunning = _cliProxyService.IsRunning;
+
+        try
+        {
+            if (wasRunning)
+            {
+                await StopServerAsync().ConfigureAwait(false);
+            }
+
+            var deleted = false;
+            foreach (var account in (_authStatusService.GetAccounts(provider)).ToArray())
+            {
+                deleted |= _authStatusService.DeleteAccount(account);
+            }
+
+            await _authStatusService.RefreshAsync().ConfigureAwait(false);
+
+            _notificationService.Show(
+                deleted ? "Disconnected" : "No Credentials Found",
+                deleted ? $"Removed stored credentials for {provider.GetDisplayName()}." : $"No credentials found for {provider.GetDisplayName()}.");
+        }
+        finally
+        {
+            if (wasRunning)
+            {
+                await StartServerAsync().ConfigureAwait(false);
+            }
+
+            SetBusy(provider, false);
+        }
+    }
+
     private void UpdateAccounts(IReadOnlyDictionary<AuthProviderType, IReadOnlyList<AuthAccount>> snapshot)
     {
         UpdateAccountCollection(AntigravityAccounts, snapshot.GetValueOrDefault(AuthProviderType.Antigravity) ?? []);
@@ -395,6 +471,13 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         StatusItems.Add(new StatusItem("Gemini", FormatAccountStatus(GeminiAccounts)));
         StatusItems.Add(new StatusItem("Qwen", FormatAccountStatus(QwenAccounts)));
         StatusItems.Add(new StatusItem("Z.AI GLM", FormatAccountStatus(ZaiAccounts)));
+
+        UpdateCard(AuthProviderType.Antigravity, AntigravityAccounts);
+        UpdateCard(AuthProviderType.Claude, ClaudeAccounts);
+        UpdateCard(AuthProviderType.Codex, CodexAccounts);
+        UpdateCard(AuthProviderType.Copilot, CopilotAccounts);
+        UpdateCard(AuthProviderType.Gemini, GeminiAccounts);
+        UpdateCard(AuthProviderType.Qwen, QwenAccounts);
     }
 
     private static void UpdateAccountCollection(ObservableCollection<AuthAccount> collection, IReadOnlyList<AuthAccount> accounts)
@@ -421,6 +504,17 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         }
 
         return $"{active} active, {expired} expired";
+    }
+
+    private static string FormatStatusChip(IEnumerable<AuthAccount> accounts)
+    {
+        var snapshot = accounts.ToArray();
+        if (snapshot.Length == 0)
+        {
+            return "Offline";
+        }
+
+        return snapshot.Any(account => !account.IsExpired) ? "Connected" : "Expired";
     }
 
     public async Task RemoveAccountAsync(AuthAccount account)
@@ -504,6 +598,11 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             _authBusy[provider] = busy;
         }
 
+        if (_serviceCards.TryGetValue(provider, out var card))
+        {
+            card.IsBusy = busy;
+        }
+
         PostToUi(() =>
         {
             RaisePropertyChanged(nameof(IsAuthenticatingAntigravity));
@@ -513,6 +612,32 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             RaisePropertyChanged(nameof(IsAuthenticatingGemini));
             RaisePropertyChanged(nameof(IsAuthenticatingQwen));
         });
+    }
+
+    private ServiceCardViewModel CreateServiceCard(AuthProviderType provider, string name, string badgeText)
+    {
+        return new ServiceCardViewModel(
+            provider,
+            name,
+            badgeText,
+            () => ConnectProviderAsync(provider),
+            () => DisconnectProviderAsync(provider));
+    }
+
+    private void UpdateCard(AuthProviderType provider, ObservableCollection<AuthAccount> accounts)
+    {
+        if (_serviceCards.TryGetValue(provider, out var card))
+        {
+            card.StatusText = FormatAccountStatus(accounts);
+            card.StatusChipText = FormatStatusChip(accounts);
+            card.IsConnected = accounts.Any(account => !account.IsExpired);
+        }
+    }
+
+    private Task NotifyMissingQwenEmailAsync()
+    {
+        _notificationService.Show("Qwen Email Required", "Enter your Qwen account email before connecting.");
+        return Task.CompletedTask;
     }
 
     private static ProviderConfigService CreateProviderConfigService()
@@ -547,4 +672,60 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     }
 
     public readonly record struct StatusItem(string Name, string Status);
+}
+
+public sealed class ServiceCardViewModel : ObservableObject
+{
+    private string _statusText = "Not Connected";
+    private string _statusChipText = "Offline";
+    private bool _isConnected;
+    private bool _isBusy;
+
+    public ServiceCardViewModel(
+        AuthProviderType provider,
+        string name,
+        string badgeText,
+        Func<Task> connectAsync,
+        Func<Task> disconnectAsync)
+    {
+        Provider = provider;
+        Name = name;
+        BadgeText = badgeText;
+        ConnectCommand = new AsyncCommand(connectAsync);
+        DisconnectCommand = new AsyncCommand(disconnectAsync);
+    }
+
+    public AuthProviderType Provider { get; }
+
+    public string Name { get; }
+
+    public string BadgeText { get; }
+
+    public string StatusText
+    {
+        get => _statusText;
+        set => SetProperty(ref _statusText, value);
+    }
+
+    public string StatusChipText
+    {
+        get => _statusChipText;
+        set => SetProperty(ref _statusChipText, value);
+    }
+
+    public bool IsConnected
+    {
+        get => _isConnected;
+        set => SetProperty(ref _isConnected, value);
+    }
+
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set => SetProperty(ref _isBusy, value);
+    }
+
+    public ICommand ConnectCommand { get; }
+
+    public ICommand DisconnectCommand { get; }
 }

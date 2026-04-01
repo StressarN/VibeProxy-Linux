@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <VersionFile>$(MSBuildThisFileDirectory)VERSION</VersionFile>
+    <Version Condition="Exists('$(VersionFile)')">$([System.IO.File]::ReadAllText('$(VersionFile)').Trim())</Version>
+    <AssemblyVersion Condition="'$(Version)' != ''">$(Version)</AssemblyVersion>
+    <FileVersion Condition="'$(Version)' != ''">$(Version)</FileVersion>
+    <InformationalVersion Condition="'$(Version)' != ''">$(Version)</InformationalVersion>
+  </PropertyGroup>
+</Project>
