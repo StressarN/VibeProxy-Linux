@@ -39,7 +39,11 @@ public sealed class TrayService
         menu.Items.Add(new NativeMenuItem("Start Server") { Command = new Utilities.AsyncCommand(viewModel.StartServerAsync) });
         menu.Items.Add(new NativeMenuItem("Stop Server") { Command = new Utilities.AsyncCommand(viewModel.StopServerAsync) });
         menu.Items.Add(new NativeMenuItemSeparator());
-        menu.Items.Add(new NativeMenuItem("Quit") { Command = new Utilities.RelayCommand(() => desktop.Shutdown()) });
+        menu.Items.Add(new NativeMenuItem("Quit") { Command = new Utilities.RelayCommand(() =>
+        {
+            if (window is MainWindow mw) mw.ForceClose();
+            desktop.Shutdown();
+        }) });
 
         _trayIcon.Menu = menu;
         _trayIcon.Clicked += (_, _) => ShowWindow(window);

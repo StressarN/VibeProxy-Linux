@@ -131,14 +131,16 @@
     </Style>
   </Window.Styles>
 
-  <Border Margin="14"
+  <Border x:Name="OuterBorder"
+          Margin="14"
           Background="{StaticResource BgBaseBrush}"
           BorderBrush="{StaticResource BorderBrush}"
           BorderThickness="1"
           CornerRadius="18"
           BoxShadow="0 28 56 0 #66000000">
     <Grid RowDefinitions="48,*">
-      <Border Grid.Row="0"
+      <Border x:Name="TitleBarBorder"
+              Grid.Row="0"
               Background="{StaticResource BgSurfaceBrush}"
               CornerRadius="18,18,0,0"
               PointerPressed="OnTitleBarPointerPressed">
